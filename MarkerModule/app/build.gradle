@@ -1,0 +1,83 @@
+apply plugin: 'com.android.application'
+
+
+def VUFORIA_SDK_DIR = '../'
+def JAR_DIR = 'vuforia-build/java/vuforia'
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.0"
+
+    sourceSets.main {
+        jni.srcDirs = []
+        jniLibs.srcDir "src/main/libs"
+    }
+
+    defaultConfig {
+        applicationId "markermodule.mavoar.com"
+        minSdkVersion 15
+        targetSdkVersion 25
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        externalNativeBuild {
+            cmake {
+                cppFlags "-fexceptions"
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+
+    task buildNative(type: Exec, description: 'Compile JNI source via NDK') {
+        println('compiling jni code with ndk-build...')
+        def ndkDir = android.ndkDirectory
+        if (System.properties['os.name'].toLowerCase().contains('windows')) {
+            commandLine "$ndkDir/ndk-build.cmd",
+                    '-C', file('src/main/jni').absolutePath
+                    // Additional ndk-build arguments, such as NDK_DEBUG, can be provided here
+        } else {
+            commandLine "$ndkDir/ndk-build",
+                    '-C', file('src/main/jni').absolutePath
+                    // Additional ndk-build arguments, such as NDK_DEBUG, can be provided here
+        }
+    }
+
+    task cleanNative(type: Exec, description: 'Clean JNI object files') {
+        def ndkDir = android.ndkDirectory
+        if (System.properties['os.name'].toLowerCase().contains('windows')) {
+            commandLine "$ndkDir/ndk-build.cmd",
+                    '-C', file('src/main/jni').absolutePath,
+                    'clean'
+        } else {
+            commandLine "$ndkDir/ndk-build",
+                    '-C', file('src/main/jni').absolutePath,
+                    'clean'
+        }
+    }
+
+    clean.dependsOn 'cleanNative'
+
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn buildNative
+    }
+}
+
+dependencies {
+    compile files("$VUFORIA_SDK_DIR/$JAR_DIR/Vuforia.jar")
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.support:appcompat-v7:25.1.0'
+    testCompile 'junit:junit:4.12'
+}

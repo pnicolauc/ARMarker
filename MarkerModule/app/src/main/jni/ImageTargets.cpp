@@ -141,7 +141,7 @@ ImageTargets_UpdateCallback updateCallback;
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_setActivityPortraitMode(JNIEnv *, jobject, jboolean isPortrait)
+Java_markermodule_mavoar_com_markers_ImageTargets_setActivityPortraitMode(JNIEnv *, jobject, jboolean isPortrait)
 {
     isActivityInPortraitMode = isPortrait;
 }
@@ -149,7 +149,7 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_setActivityPortraitMode(JNIEn
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_switchDatasetAsap(JNIEnv *, jobject, jint datasetId)
+Java_markermodule_mavoar_com_markers_ImageTargets_switchDatasetAsap(JNIEnv *, jobject, jint datasetId)
 {
     selectedDataset = datasetId;
     switchDataSetAsap = true;
@@ -157,10 +157,10 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_switchDatasetAsap(JNIEnv *, j
 
 
 JNIEXPORT int JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_initTracker(JNIEnv *, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_initTracker(JNIEnv *, jobject)
 {
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargets_initTracker");
-    
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargets_initTracker");
+
     // Initialize the object tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     Vuforia::Tracker* tracker = trackerManager.initTracker(Vuforia::ObjectTracker::getClassType());
@@ -176,9 +176,9 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_initTracker(JNIEnv *, jobject
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_deinitTracker(JNIEnv *, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_deinitTracker(JNIEnv *, jobject)
 {
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargets_deinitTracker");
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargets_deinitTracker");
 
     // Deinit the object tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
@@ -187,10 +187,10 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_deinitTracker(JNIEnv *, jobje
 
 
 JNIEXPORT int JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_loadTrackerData(JNIEnv *, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_loadTrackerData(JNIEnv *, jobject)
 {
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargets_loadTrackerData");
-    
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargets_loadTrackerData");
+
     // Get the object tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     Vuforia::ObjectTracker* objectTracker = static_cast<Vuforia::ObjectTracker*>(
@@ -243,9 +243,9 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_loadTrackerData(JNIEnv *, job
 
 
 JNIEXPORT int JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_destroyTrackerData(JNIEnv *, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_destroyTrackerData(JNIEnv *, jobject)
 {
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargets_destroyTrackerData");
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargets_destroyTrackerData");
 
     // Get the object tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
@@ -257,7 +257,7 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_destroyTrackerData(JNIEnv *, 
             " been initialized.");
         return 0;
     }
-    
+
     if (dataSetStonesAndChips != 0)
     {
         if (objectTracker->getActiveDataSet(0) == dataSetStonesAndChips &&
@@ -303,7 +303,7 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_destroyTrackerData(JNIEnv *, 
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_onVuforiaInitializedNative(JNIEnv *, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_onVuforiaInitializedNative(JNIEnv *, jobject)
 {
     // Register the update callback where we handle the data set swap:
     Vuforia::registerCallback(&updateCallback);
@@ -315,7 +315,7 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_onVuforiaInitializedNative(JN
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargetsRenderer_renderFrame(JNIEnv *, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargetsRenderer_renderFrame(JNIEnv *, jobject)
 {
     // Call renderFrame from SampleAppRenderer which will loop through the rendering primitives
     // views and then it will call renderFrameForView per each of the views available,
@@ -459,7 +459,7 @@ configureVideoBackground()
     config.mEnabled = true;
     config.mPosition.data[0] = 0.0f;
     config.mPosition.data[1] = 0.0f;
-    
+
     if (isActivityInPortraitMode)
     {
         //LOG("configureVideoBackground PORTRAIT");
@@ -471,7 +471,7 @@ configureVideoBackground()
         {
             LOG("Correcting rendering background size to handle missmatch between screen and video aspect ratios.");
             config.mSize.data[0] = screenWidth;
-            config.mSize.data[1] = screenWidth * 
+            config.mSize.data[1] = screenWidth *
                               (videoMode.mWidth / (float)videoMode.mHeight);
         }
     }
@@ -499,11 +499,11 @@ configureVideoBackground()
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_initApplicationNative(
+Java_markermodule_mavoar_com_markers_ImageTargets_initApplicationNative(
                             JNIEnv* env, jobject obj, jint width, jint height)
 {
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargets_initApplicationNative");
-    
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargets_initApplicationNative");
+
     // Store screen dimensions
     screenWidth = width;
     screenHeight = height;
@@ -531,7 +531,7 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_initApplicationNative(
     textures = new Texture*[textureCount];
 
     jmethodID getTextureMethodID = env->GetMethodID(activityClass,
-        "getTexture", "(I)Lcom/vuforia/samples/ImageTargets/Texture;");
+        "getTexture", "(I)Lmarkermodule/mavoar/com/markers/Texture;");
 
     if (getTextureMethodID == 0)
     {
@@ -543,7 +543,7 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_initApplicationNative(
     for (int i = 0; i < textureCount; ++i)
     {
 
-        jobject textureObject = env->CallObjectMethod(obj, getTextureMethodID, i); 
+        jobject textureObject = env->CallObjectMethod(obj, getTextureMethodID, i);
         if (textureObject == NULL)
         {
             LOG("GetTexture() returned zero pointer");
@@ -552,30 +552,30 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_initApplicationNative(
 
         textures[i] = Texture::create(env, textureObject);
     }
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargets_initApplicationNative finished");
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargets_initApplicationNative finished");
 }
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_deinitApplicationNative(
+Java_markermodule_mavoar_com_markers_ImageTargets_deinitApplicationNative(
                                                         JNIEnv* env, jobject obj)
 {
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargets_deinitApplicationNative");
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargets_deinitApplicationNative");
 
     isExtendedTrackingActivated = false;
 
     // Release texture resources
     if (textures != 0)
-    {    
+    {
         for (int i = 0; i < textureCount; ++i)
         {
             delete textures[i];
             textures[i] = NULL;
         }
-    
+
         delete[]textures;
         textures = NULL;
-        
+
         textureCount = 0;
     }
 
@@ -585,11 +585,11 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_deinitApplicationNative(
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_startCamera(JNIEnv *,
+Java_markermodule_mavoar_com_markers_ImageTargets_startCamera(JNIEnv *,
                                                                          jobject, jint camera)
 {
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargets_startCamera");
-    
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargets_startCamera");
+
     currentCamera = static_cast<Vuforia::CameraDevice::CAMERA_DIRECTION> (camera);
 
     // Initialize the camera:
@@ -603,7 +603,7 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_startCamera(JNIEnv *,
 
     // Configure the rendering of the video background
     configureVideoBackground();
-    
+
     // Start the camera:
     if (!Vuforia::CameraDevice::getInstance().start())
         return;
@@ -626,25 +626,25 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_startCamera(JNIEnv *,
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_stopCamera(JNIEnv *, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_stopCamera(JNIEnv *, jobject)
 {
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargets_stopCamera");
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargets_stopCamera");
 
     // Stop the tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     Vuforia::Tracker* objectTracker = trackerManager.getTracker(Vuforia::ObjectTracker::getClassType());
     if(objectTracker != 0)
         objectTracker->stop();
-    
+
     Vuforia::CameraDevice::getInstance().stop();
     Vuforia::CameraDevice::getInstance().deinit();
 }
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargetsRenderer_updateRenderingPrimitives(JNIEnv *, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargetsRenderer_updateRenderingPrimitives(JNIEnv *, jobject)
 {
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargetsRenderer_updateRenderingPrimitives");
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargetsRenderer_updateRenderingPrimitives");
 
     sampleAppRenderer->updateRenderingPrimitives();
 }
@@ -653,20 +653,20 @@ Java_com_vuforia_samples_ImageTargets_ImageTargetsRenderer_updateRenderingPrimit
 // Activates Camera Flash
 // ----------------------------------------------------------------------------
 JNIEXPORT jboolean JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_activateFlash(JNIEnv*, jobject, jboolean flash)
+Java_markermodule_mavoar_com_markers_ImageTargets_activateFlash(JNIEnv*, jobject, jboolean flash)
 {
     return Vuforia::CameraDevice::getInstance().setFlashTorchMode((flash==JNI_TRUE)) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_autofocus(JNIEnv*, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_autofocus(JNIEnv*, jobject)
 {
     return Vuforia::CameraDevice::getInstance().setFocusMode(Vuforia::CameraDevice::FOCUS_MODE_TRIGGERAUTO) ? JNI_TRUE : JNI_FALSE;
 }
 
 
 JNIEXPORT jboolean JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_setFocusMode(JNIEnv*, jobject, jint mode)
+Java_markermodule_mavoar_com_markers_ImageTargets_setFocusMode(JNIEnv*, jobject, jint mode)
 {
     int focusMode;
 
@@ -675,29 +675,29 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_setFocusMode(JNIEnv*, jobject
         case 0:
             focusMode = Vuforia::CameraDevice::FOCUS_MODE_NORMAL;
             break;
-        
+
         case 1:
             focusMode = Vuforia::CameraDevice::FOCUS_MODE_CONTINUOUSAUTO;
             break;
-            
+
         case 2:
             focusMode = Vuforia::CameraDevice::FOCUS_MODE_INFINITY;
             break;
-            
+
         case 3:
             focusMode = Vuforia::CameraDevice::FOCUS_MODE_MACRO;
             break;
-    
+
         default:
             return JNI_FALSE;
     }
-    
+
     return Vuforia::CameraDevice::getInstance().setFocusMode(focusMode) ? JNI_TRUE : JNI_FALSE;
 }
 
 
 JNIEXPORT jboolean JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_startExtendedTracking(JNIEnv*, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_startExtendedTracking(JNIEnv*, jobject)
 {
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     Vuforia::ObjectTracker* objectTracker = static_cast<Vuforia::ObjectTracker*>(
@@ -720,7 +720,7 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_startExtendedTracking(JNIEnv*
 
 
 JNIEXPORT jboolean JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargets_stopExtendedTracking(JNIEnv*, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_stopExtendedTracking(JNIEnv*, jobject)
 {
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     Vuforia::ObjectTracker* objectTracker = static_cast<Vuforia::ObjectTracker*>(
@@ -736,21 +736,21 @@ Java_com_vuforia_samples_ImageTargets_ImageTargets_stopExtendedTracking(JNIEnv*,
         if(!trackable->stopExtendedTracking())
             return JNI_FALSE;
     }
-    
+
     isExtendedTrackingActivated = false;
     return JNI_TRUE;
 }
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargetsRenderer_initRendering(
+Java_markermodule_mavoar_com_markers_ImageTargetsRenderer_initRendering(
                                                     JNIEnv* env, jobject obj)
 {
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargetsRenderer_initRendering");
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargetsRenderer_initRendering");
 
     // Define clear color
     glClearColor(0.0f, 0.0f, 0.0f, Vuforia::requiresAlpha() ? 0.0f : 1.0f);
-    
+
     // Now generate the OpenGL texture objects and add settings
     for (int i = 0; i < textureCount; ++i)
     {
@@ -762,7 +762,7 @@ Java_com_vuforia_samples_ImageTargets_ImageTargetsRenderer_initRendering(
                 textures[i]->mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                 (GLvoid*)  textures[i]->mData);
     }
-  
+
     shaderProgramID     = SampleUtils::createProgramFromBuffer(cubeMeshVertexShader,
                                                             cubeFragmentShader);
 
@@ -772,17 +772,17 @@ Java_com_vuforia_samples_ImageTargets_ImageTargetsRenderer_initRendering(
                                                 "vertexTexCoord");
     mvpMatrixHandle     = glGetUniformLocation(shaderProgramID,
                                                 "modelViewProjectionMatrix");
-    texSampler2DHandle  = glGetUniformLocation(shaderProgramID, 
+    texSampler2DHandle  = glGetUniformLocation(shaderProgramID,
                                                 "texSampler2D");
     sampleAppRenderer->initRendering();
 }
 
 
 JNIEXPORT void JNICALL
-Java_com_vuforia_samples_ImageTargets_ImageTargetsRenderer_updateRendering(
+Java_markermodule_mavoar_com_markers_ImageTargetsRenderer_updateRendering(
                         JNIEnv* env, jobject obj, jint width, jint height)
 {
-    LOG("Java_com_vuforia_samples_ImageTargets_ImageTargetsRenderer_updateRendering");
+    LOG("Java_markermodule_mavoar_com_markers_ImageTargetsRenderer_updateRendering");
 
     // Update screen dimensions
     screenWidth = width;

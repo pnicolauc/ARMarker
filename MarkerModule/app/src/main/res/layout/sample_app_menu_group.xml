@@ -10,6 +10,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
         android:paddingTop="32dip"
+        android:textSize="20dp"
         android:fontFamily="sans-serif"
         android:textColor="@color/gray"
         />

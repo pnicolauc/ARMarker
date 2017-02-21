@@ -16,6 +16,7 @@ import java.util.Vector;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -53,6 +54,11 @@ import markermodule.mavoar.com.utils.DebugLog;
 /** The main activity for the ImageTargets sample. */
 public class ImageTargets extends Activity implements SampleAppMenuInterface
 {
+    //dataset variables
+    private String dataset_key;
+    private String dataset_name;
+
+
     // Focus mode constants:
     private static final int FOCUS_MODE_NORMAL = 0;
     private static final int FOCUS_MODE_CONTINUOUS_AUTO = 1;
@@ -189,7 +195,8 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
             // Prevent the onDestroy() method to overlap with initialization:
             synchronized (mShutdownLock)
             {
-                Vuforia.setInitParameters(ImageTargets.this, mVuforiaFlags, "AaZmdFD/////AAAAGXwIIWCrJUGqkrTkXvoBco5WsL7Lzd7lFnoMM6Fjj7QkiUAwR7a+6LfYzkQ9pZ2aCjP6Om+9Lbj/wSqxUVm5bWHoNqeLT2fQuhNvcQo1VY765B1Kw1uF9dVGEZCkBHNhbTQ3Oo5vcAHDl+XLjrE4JrD/WQ3GJoH3RzZscHFvrNnqagTUvuhkWRh0CFeA2nXeOMGTWZQVKfAFJGV8Hxrdyv3wlDbG5Xw7SSSyf2EkvNUQpcnM2qc115FGw15yPyKBJLM1SSFhB4xoispnxQwGRirNlP547z2kz2sJKso0omEfCMa6Av+KCYU1TsJ5eSE+lAuLHGs2GCqzSKogewZUSR9FhSYhsMk7+RoFVckLm3V0");
+
+                Vuforia.setInitParameters(ImageTargets.this, mVuforiaFlags, dataset_key);
                 
                 do
                 {
@@ -361,6 +368,13 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
     {
         DebugLog.LOGD("onCreate");
         super.onCreate(savedInstanceState);
+
+
+        Intent i= getIntent();
+        Bundle args = i.getExtras();
+
+        dataset_key = args.getString("key");
+        dataset_name = args.getString("name");
 
         // Load any sample specific textures:
         mTextures = new Vector<Texture>();
@@ -624,6 +638,7 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
                 // UI thread and it can be executed only once!
                 try
                 {
+
                     mInitVuforiaTask = new InitVuforiaTask();
                     mInitVuforiaTask.execute();
                 } catch (Exception e)
@@ -727,7 +742,7 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
                 
                 if( mSampleAppMenu == null)
                 {
-                    mSampleAppMenu = new SampleAppMenu(this, this, "Image Targets",
+                    mSampleAppMenu = new SampleAppMenu(this, this, dataset_name,
                         mGlView, mUILayout, null);
                     setSampleAppMenuSettings();
                 }

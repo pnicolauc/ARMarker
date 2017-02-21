@@ -4,6 +4,7 @@
     android:gravity="center"
     android:background="@color/white">
     <ImageView
+        android:id="@+id/logoim"
         android:layout_marginTop="100dp"
         android:layout_height="200dp"
         android:layout_width="300dp"
@@ -11,13 +12,30 @@
         android:layout_centerHorizontal="true"
 
         android:src="@drawable/logo"/>
+
+    <TextView
+        android:id="@+id/choose"
+        android:layout_below="@id/logoim"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:textSize="20sp"
+        android:text="Choose Dataset:"
+        android:textColor="@color/black"/>
+
+    <Spinner
+        android:id="@+id/spin"
+        android:layout_below="@id/choose"
+        android:entries="@array/dataset_names"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
     <Button
         android:id="@+id/start"
         android:layout_width="300dp"
+        android:layout_below="@id/spin"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="100dp"
+        android:layout_marginTop="30dp"
         android:textColor="@color/white"
         android:background="@color/darkred"
         android:text="Start"/>

@@ -18,6 +18,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.hardware.Camera;
@@ -121,7 +122,7 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
     private int mVuforiaFlags = 0;
     
     // The textures we will use for rendering:
-    private Vector<Texture> mTextures;
+    //private Vector<Texture> mTextures;
     
     // Detects the double tap gesture for launching the Camera menu
     private GestureDetector mGestureDetector;
@@ -376,9 +377,9 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
         dataset_key = args.getString("key");
         dataset_name = args.getString("name");
 
-        // Load any sample specific textures:
+        /*// Load any sample specific textures:
         mTextures = new Vector<Texture>();
-        loadTextures();
+        loadTextures();*/
         
         // Configure Vuforia to use OpenGL ES 2.0
         mVuforiaFlags = INIT_FLAGS.GL_20;
@@ -399,7 +400,7 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
      * We want to load specific textures from the APK, which we will later use
      * for rendering.
      */
-    private void loadTextures()
+  /*  private void loadTextures()
     {
         mTextures.add(Texture.loadTextureFromApk("TextureTeapotBrass.png",
             getAssets()));
@@ -409,11 +410,11 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
             getAssets()));
         mTextures
             .add(Texture.loadTextureFromApk("Buildings.jpeg", getAssets()));
-    }
+    }*/
     
     
     /** Native tracker initialization and deinitialization. */
-    public native int initTracker();
+    public native int initTracker(AssetManager c, String pathToInternalDir);
     
     
     public native void deinitTracker();
@@ -588,8 +589,8 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
             deinitApplicationNative();
             
             // Unload texture:
-            mTextures.clear();
-            mTextures = null;
+            /*mTextures.clear();
+            mTextures = null;*/
             
             // Destroy the tracking data set:
             destroyTrackerData();
@@ -649,7 +650,7 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
             
             case APPSTATUS_INIT_TRACKER:
                 // Initialize the ObjectTracker:
-                if (initTracker() > 0)
+                if (initTracker(this.getAssets(),getFilesDir().getAbsolutePath()) > 0)
                 {
                     // Proceed to next application initialization status:
                     updateApplicationStatus(APPSTATUS_INIT_APP_AR);
@@ -819,7 +820,7 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
     
     
     /** Tells native code to switch dataset as soon as possible */
-    private native void switchDatasetAsap(int datasetId);
+    private native void switchDatasetAsap(String dataset);
     
     
     private native boolean autofocus();
@@ -832,18 +833,18 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
     private native boolean activateFlash(boolean flash);
     
     
-    /** Returns the number of registered textures. */
-    public int getTextureCount()
+   /** Returns the number of registered textures. */
+   /* public int getTextureCount()
     {
         return mTextures.size();
-    }
+    }*/
     
     
     /** Returns the texture object at the specified index. */
-    public Texture getTexture(int i)
+  /*  public Texture getTexture(int i)
     {
         return mTextures.elementAt(i);
-    }
+    }*/
     
     
     /** A helper for loading native libraries stored in "libs/armeabi*". */
@@ -1084,11 +1085,11 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
                 break;
             
             case CMD_DATASET_STONES_AND_CHIPS_DATASET:
-                switchDatasetAsap(STONES_AND_CHIPS_DATASET_ID);
+                switchDatasetAsap("teste");
                 break;
             
             case CMD_DATASET_TARMAC_DATASET:
-                switchDatasetAsap(TARMAC_DATASET_ID);
+                switchDatasetAsap("teste");
                 break;
         
         }

@@ -1,0 +1,18 @@
+{
+  "config": "StonesAndChips.xml",
+  "model": {
+    "scale":2.0,
+    "targetTransforms":[
+      {
+        "target":"stones",
+        "translation":[0.0,0.0,0.0],
+        "rotation":[0.0,0.0,0.0]
+      },
+      {
+        "target":"chips",
+        "translation":[1.0,0.0,0.0],
+        "rotation":[0.0,0.0,0.0]
+      }
+    ]
+  }
+}

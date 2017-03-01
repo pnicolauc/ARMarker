@@ -44,6 +44,17 @@ countries.
 #include "Buildings.h"
 #include "SampleAppRenderer.h"
 
+
+#include "AAIOSystem.h"
+#include "AALogStream.h"
+#include <assimp/Importer.hpp>
+#include <android/asset_manager_jni.h>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>     // Post processing fla
+#include <assimp/DefaultLogger.hpp>
+#include "myJNIHelper.h"
+#include "modelAssimp.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -83,6 +94,21 @@ Vuforia::CameraDevice::CAMERA_DIRECTION currentCamera;
 const int STONES_AND_CHIPS_DATASET_ID = 0;
 const int TARMAC_DATASET_ID = 1;
 int selectedDataset = STONES_AND_CHIPS_DATASET_ID;
+
+
+static AAssetManager *mgr;
+
+const aiScene* scene;
+
+bool bLoaded;
+
+
+
+// global pointer to instance of MyJNIHelper that is used to read from assets
+MyJNIHelper * gHelperObject=NULL;
+
+// global pointer is used in JNI calls to reference to same object of type Cube
+ModelAssimp *gAssimpObject =NULL;
 
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
@@ -146,20 +172,53 @@ Java_markermodule_mavoar_com_markers_ImageTargets_setActivityPortraitMode(JNIEnv
     isActivityInPortraitMode = isPortrait;
 }
 
+/*
+std::string ConvertJString(JNIEnv* env, jstring str)
+{
+   if ( !str ) LString();
 
+   const jsize len = env->GetStringUTFLength(str);
+   const char* strChars = env->GetStringUTFChars(str, (jboolean *)0);
+
+   std::string Result(strChars, len);
+
+   env->ReleaseStringUTFChars(str, strChars);
+
+   return Result;
+}*/
 
 JNIEXPORT void JNICALL
-Java_markermodule_mavoar_com_markers_ImageTargets_switchDatasetAsap(JNIEnv *, jobject, jint datasetId)
+Java_markermodule_mavoar_com_markers_ImageTargets_switchDatasetAsap(JNIEnv* env, jobject, jstring dataset)
 {
-    selectedDataset = datasetId;
+   // std::string dataset = ConvertJString( env, bitmappath );
+
+    selectedDataset = 0;
     switchDataSetAsap = true;
 }
 
 
 JNIEXPORT int JNICALL
-Java_markermodule_mavoar_com_markers_ImageTargets_initTracker(JNIEnv *, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_initTracker(JNIEnv *env, jobject instance,jobject assetManager,jstring pathToInternalDir)
 {
     LOG("Java_markermodule_mavoar_com_markers_ImageTargets_initTracker");
+    Assimp::Importer *imp = new Assimp::Importer();
+    mgr = AAssetManager_fromJava(env, assetManager);
+    AAIOSystem* ioSystem = new AAIOSystem(mgr);
+    imp->SetIOHandler(ioSystem);
+
+    scene =imp->ReadFile( "crytek-sponza/sponza.obj",
+           								aiProcessPreset_TargetRealtime_Quality);
+
+
+    gHelperObject = new MyJNIHelper(env, instance, assetManager, pathToInternalDir);
+    gAssimpObject = new ModelAssimp();
+
+    gAssimpObject->PerformGLInits();
+
+    const int iVertexTotalSize = sizeof(aiVector3D)*2+sizeof(aiVector2D);
+
+   int iTotalVertices = 0;
+
 
     // Initialize the object tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
@@ -187,7 +246,7 @@ Java_markermodule_mavoar_com_markers_ImageTargets_deinitTracker(JNIEnv *, jobjec
 
 
 JNIEXPORT int JNICALL
-Java_markermodule_mavoar_com_markers_ImageTargets_loadTrackerData(JNIEnv *, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_loadTrackerData(JNIEnv *env, jobject)
 {
     LOG("Java_markermodule_mavoar_com_markers_ImageTargets_loadTrackerData");
 
@@ -366,7 +425,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                 textureIndex = 2;
             }
 
-            const Texture* const thisTexture = textures[textureIndex];
+            //const Texture* const thisTexture = textures[textureIndex];
 
             Vuforia::Matrix44F modelViewProjection;
 
@@ -380,24 +439,27 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
             glUseProgram(shaderProgramID);
 
-            glVertexAttribPointer(vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
+            /*glVertexAttribPointer(vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
                                   (const GLvoid*) &teapotVertices[0]);
             glVertexAttribPointer(textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,
                                   (const GLvoid*) &teapotTexCoords[0]);
 
-            glEnableVertexAttribArray(vertexHandle);
-            glEnableVertexAttribArray(textureCoordHandle);
+            glEnableVertexAttribArray(vertexHandle);*/
+            //glEnableVertexAttribArray(textureCoordHandle);
 
-            glActiveTexture(GL_TEXTURE0);
+            /*glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, thisTexture->mTextureID);
-            glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0*/);
-            glUniformMatrix4fv(mvpMatrixHandle, 1, GL_FALSE,
-                               (GLfloat*)&modelViewProjection.data[0] );
-            glDrawElements(GL_TRIANGLES, NUM_TEAPOT_OBJECT_INDEX, GL_UNSIGNED_SHORT,
-                           (const GLvoid*) &teapotIndices[0]);
+            glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0);*/
 
-            glDisableVertexAttribArray(vertexHandle);
-            glDisableVertexAttribArray(textureCoordHandle);
+            gAssimpObject->Render((GLfloat*)&modelViewProjection.data[0]);
+
+            //glUniformMatrix4fv(mvpMatrixHandle, 1, GL_FALSE,
+              //                 (GLfloat*)&modelViewProjection.data[0] );
+            //glDrawElements(GL_TRIANGLES, NUM_TEAPOT_OBJECT_INDEX, GL_UNSIGNED_SHORT,
+            //               (const GLvoid*) &teapotIndices[0]);
+
+            //glDisableVertexAttribArray(vertexHandle);
+            //glDisableVertexAttribArray(textureCoordHandle);
 
             SampleUtils::checkGlError("ImageTargets renderFrame");
         }
@@ -440,6 +502,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             SampleUtils::checkGlError("ImageTargets renderFrame");
         }
     }
+
 
     glDisable(GL_DEPTH_TEST);
 }
@@ -513,8 +576,8 @@ Java_markermodule_mavoar_com_markers_ImageTargets_initApplicationNative(
     // Handle to the activity class:
     jclass activityClass = env->GetObjectClass(obj);
 
-    jmethodID getTextureCountMethodID = env->GetMethodID(activityClass,
-                                                    "getTextureCount", "()I");
+    /*jmethodID getTextureCountMethodID = env->GetMethodID(activityClass,
+     //                                               "getTextureCount", "()I");
     if (getTextureCountMethodID == 0)
     {
         LOG("Function getTextureCount() not found.");
@@ -552,6 +615,7 @@ Java_markermodule_mavoar_com_markers_ImageTargets_initApplicationNative(
 
         textures[i] = Texture::create(env, textureObject);
     }
+    */
     LOG("Java_markermodule_mavoar_com_markers_ImageTargets_initApplicationNative finished");
 }
 
@@ -564,7 +628,7 @@ Java_markermodule_mavoar_com_markers_ImageTargets_deinitApplicationNative(
 
     isExtendedTrackingActivated = false;
 
-    // Release texture resources
+    /* Release texture resources
     if (textures != 0)
     {
         for (int i = 0; i < textureCount; ++i)
@@ -578,7 +642,7 @@ Java_markermodule_mavoar_com_markers_ImageTargets_deinitApplicationNative(
 
         textureCount = 0;
     }
-
+*/
     delete sampleAppRenderer;
     sampleAppRenderer = NULL;
 }
@@ -752,7 +816,7 @@ Java_markermodule_mavoar_com_markers_ImageTargetsRenderer_initRendering(
     glClearColor(0.0f, 0.0f, 0.0f, Vuforia::requiresAlpha() ? 0.0f : 1.0f);
 
     // Now generate the OpenGL texture objects and add settings
-    for (int i = 0; i < textureCount; ++i)
+    /*for (int i = 0; i < textureCount; ++i)
     {
         glGenTextures(1, &(textures[i]->mTextureID));
         glBindTexture(GL_TEXTURE_2D, textures[i]->mTextureID);
@@ -761,7 +825,7 @@ Java_markermodule_mavoar_com_markers_ImageTargetsRenderer_initRendering(
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textures[i]->mWidth,
                 textures[i]->mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                 (GLvoid*)  textures[i]->mData);
-    }
+    }*/
 
     shaderProgramID     = SampleUtils::createProgramFromBuffer(cubeMeshVertexShader,
                                                             cubeFragmentShader);

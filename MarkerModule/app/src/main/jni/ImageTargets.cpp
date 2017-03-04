@@ -78,7 +78,7 @@ int screenHeight                = 0;
 bool isActivityInPortraitMode   = false;
 
 // Constants:
-static const float kObjectScale          = 0.003f;
+static const float kObjectScale          = 0.03f;
 static const float kBuildingsObjectScale = 0.012f;
 
 Vuforia::DataSet* dataSetStonesAndChips  = 0;
@@ -201,23 +201,23 @@ JNIEXPORT int JNICALL
 Java_markermodule_mavoar_com_markers_ImageTargets_initTracker(JNIEnv *env, jobject instance,jobject assetManager,jstring pathToInternalDir)
 {
     LOG("Java_markermodule_mavoar_com_markers_ImageTargets_initTracker");
-    Assimp::Importer *imp = new Assimp::Importer();
+    /*Assimp::Importer *imp = new Assimp::Importer();
     mgr = AAssetManager_fromJava(env, assetManager);
     AAIOSystem* ioSystem = new AAIOSystem(mgr);
     imp->SetIOHandler(ioSystem);
 
     scene =imp->ReadFile( "crytek-sponza/sponza.obj",
            								aiProcessPreset_TargetRealtime_Quality);
-
+*/
 
     gHelperObject = new MyJNIHelper(env, instance, assetManager, pathToInternalDir);
     gAssimpObject = new ModelAssimp();
 
     gAssimpObject->PerformGLInits();
-
+/*
     const int iVertexTotalSize = sizeof(aiVector3D)*2+sizeof(aiVector2D);
 
-   int iTotalVertices = 0;
+   int iTotalVertices = 0;*/
 
 
     // Initialize the object tracker:
@@ -395,7 +395,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     if(Vuforia::Renderer::getInstance().getVideoBackgroundConfig().mReflection == Vuforia::VIDEO_BACKGROUND_REFLECTION_ON)
-        glFrontFace(GL_CW);  //Front camera
+        glFrontFace(GL_CCW);  //Front camera
     else
         glFrontFace(GL_CCW);   //Back camera
 
@@ -406,101 +406,75 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         const Vuforia::TrackableResult* result = state->getTrackableResult(tIdx);
         const Vuforia::Trackable& trackable = result->getTrackable();
         Vuforia::Matrix44F modelViewMatrix =
-            Vuforia::Tool::convertPose2GLMatrix(result->getPose());
+        Vuforia::Tool::convertPose2GLMatrix(result->getPose());
 
-        if(!isExtendedTrackingActivated)
+
+        // Choose the texture based on the target name:
+        /*int textureIndex;
+        if (strcmp(trackable.getName(), "chips") == 0)
         {
-            // Choose the texture based on the target name:
-            int textureIndex;
-            if (strcmp(trackable.getName(), "chips") == 0)
-            {
-                textureIndex = 0;
-            }
-            else if (strcmp(trackable.getName(), "stones") == 0)
-            {
-                textureIndex = 1;
-            }
-            else
-            {
-                textureIndex = 2;
-            }
+            textureIndex = 0;
+        }*/
 
-            //const Texture* const thisTexture = textures[textureIndex];
 
-            Vuforia::Matrix44F modelViewProjection;
+        //const Texture* const thisTexture = textures[textureIndex];
 
-            SampleUtils::translatePoseMatrix(0.0f, 0.0f, kObjectScale,
-                                             &modelViewMatrix.data[0]);
-            SampleUtils::scalePoseMatrix(kObjectScale, kObjectScale, kObjectScale,
+        Vuforia::Matrix44F modelViewProjection;
+
+        SampleUtils::translatePoseMatrix(0.0f, 0.0f, kObjectScale,
                                          &modelViewMatrix.data[0]);
-            SampleUtils::multiplyMatrix(&projectionMatrix.data[0],
-                                        &modelViewMatrix.data[0] ,
-                                        &modelViewProjection.data[0]);
+        SampleUtils::scalePoseMatrix(kObjectScale, kObjectScale, kObjectScale,
+                                     &modelViewMatrix.data[0]);
+        SampleUtils::multiplyMatrix(&projectionMatrix.data[0],
+                                    &modelViewMatrix.data[0] ,
+                                    &modelViewProjection.data[0]);
 
-            glUseProgram(shaderProgramID);
+        glUseProgram(shaderProgramID);
 
-            /*glVertexAttribPointer(vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
-                                  (const GLvoid*) &teapotVertices[0]);
-            glVertexAttribPointer(textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,
-                                  (const GLvoid*) &teapotTexCoords[0]);
 
-            glEnableVertexAttribArray(vertexHandle);*/
-            //glEnableVertexAttribArray(textureCoordHandle);
+        std::vector<struct MeshInfo> modelMeshes= gAssimpObject->getMeshes();
+        unsigned int numberOfLoadedMeshes = modelMeshes.size();
 
-            /*glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, thisTexture->mTextureID);
-            glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0);*/
+        // render all meshes
+         for (unsigned int n = 0; n < numberOfLoadedMeshes; ++n) {
 
-            gAssimpObject->Render((GLfloat*)&modelViewProjection.data[0]);
+          /*  glActiveTexture(GL_TEXTURE0);
+            glBindTexture( GL_TEXTURE_2D, modelMeshes.at(0).textureIndex);
+            glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0);
+                // Texture
+               /* if (modelMeshes[0].textureIndex) {
+                            glActiveTexture(GL_TEXTURE0);
 
-            //glUniformMatrix4fv(mvpMatrixHandle, 1, GL_FALSE,
-              //                 (GLfloat*)&modelViewProjection.data[0] );
-            //glDrawElements(GL_TRIANGLES, NUM_TEAPOT_OBJECT_INDEX, GL_UNSIGNED_SHORT,
-            //               (const GLvoid*) &teapotIndices[0]);
+                    glBindTexture( GL_TEXTURE_2D, modelMeshes[0].textureIndex);
+                    glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0);
+                }*/
 
-            //glDisableVertexAttribArray(vertexHandle);
-            //glDisableVertexAttribArray(textureCoordHandle);
+            if (modelMeshes[n].textureIndex) {
+              /*  glActiveTexture(GL_TEXTURE0);
+
+                glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0*///);
+
+               // glBindTexture( GL_TEXTURE_2D, modelMeshes[n].textureIndex);
+
+            }
+             glVertexAttribPointer(vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
+                                   (const GLvoid*)  (modelMeshes[n].vertices));
+             glVertexAttribPointer(textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,
+                                  (const GLvoid*) (modelMeshes[n].texCoords));
+
+             glEnableVertexAttribArray(vertexHandle);
+             glEnableVertexAttribArray(textureCoordHandle);
+             glUniformMatrix4fv(mvpMatrixHandle, 1, GL_FALSE,
+             (GLfloat*)&modelViewProjection.data[0] );
+
+              glDrawElements(GL_TRIANGLES,  modelMeshes[n].nIndices, GL_UNSIGNED_SHORT,
+                            (const GLvoid*)(modelMeshes[n].indices));
+
+
+            }
 
             SampleUtils::checkGlError("ImageTargets renderFrame");
-        }
-        else
-        {
-            const Texture* const thisTexture = textures[3];
 
-            Vuforia::Matrix44F modelViewProjection;
-
-            SampleUtils::translatePoseMatrix(0.0f, 0.0f, kBuildingsObjectScale,
-                                             &modelViewMatrix.data[0]);
-            SampleUtils::rotatePoseMatrix(90.0f, 1.0f, 0.0f, 0.0f,
-                                              &modelViewMatrix.data[0]);
-            SampleUtils::scalePoseMatrix(kBuildingsObjectScale, kBuildingsObjectScale, kBuildingsObjectScale,
-                                         &modelViewMatrix.data[0]);
-            SampleUtils::multiplyMatrix(&projectionMatrix.data[0],
-                                        &modelViewMatrix.data[0] ,
-                                        &modelViewProjection.data[0]);
-
-            glUseProgram(shaderProgramID);
-
-            glVertexAttribPointer(vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
-                                  (const GLvoid*) &buildingsVerts[0]);
-            glVertexAttribPointer(textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,
-                                  (const GLvoid*) &buildingsTexCoords[0]);
-
-            glEnableVertexAttribArray(vertexHandle);
-            glEnableVertexAttribArray(textureCoordHandle);
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, thisTexture->mTextureID);
-            glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0*/);
-            glUniformMatrix4fv(mvpMatrixHandle, 1, GL_FALSE,
-                               (GLfloat*)&modelViewProjection.data[0] );
-            glDrawArrays(GL_TRIANGLES, 0, buildingsNumVerts);
-
-            glDisableVertexAttribArray(vertexHandle);
-            glDisableVertexAttribArray(textureCoordHandle);
-
-            SampleUtils::checkGlError("ImageTargets renderFrame");
-        }
     }
 
 

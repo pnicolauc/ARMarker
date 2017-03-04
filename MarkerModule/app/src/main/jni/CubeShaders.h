@@ -13,7 +13,7 @@ countries.
 
 static const char* cubeMeshVertexShader = " \
   \
-attribute vec4 vertexPosition; \
+attribute vec3 vertexPosition; \
 attribute vec2 vertexTexCoord; \
  \
 varying vec2 texCoord; \
@@ -22,7 +22,7 @@ uniform mat4 modelViewProjectionMatrix; \
  \
 void main() \
 { \
-   gl_Position = modelViewProjectionMatrix * vertexPosition; \
+   gl_Position = modelViewProjectionMatrix * vec4(vertexPosition,1); \
    texCoord = vertexTexCoord; \
 } \
 ";
@@ -38,7 +38,7 @@ uniform sampler2D texSampler2D; \
  \
 void main() \
 { \
-   gl_FragColor = texture2D(texSampler2D, texCoord); \
+   gl_FragColor.xyz = texture2D(texSampler2D, texCoord).xyz; \
 } \
 ";
 

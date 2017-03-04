@@ -31,7 +31,7 @@ ModelAssimp::ModelAssimp() {
 
     // create MyGLCamera object and set default position for the object
     //myGLCamera = new MyGLCamera();
-    float pos[]={0.,0.,0.,0.2,0.5,0.};
+    float pos[]={0.,0.,0.,0.0,0.0,0.};
     std::copy(&pos[0], &pos[5], std::back_inserter(modelDefaultPosition));
     //myGLCamera->SetModelPosition(modelDefaultPosition);
 
@@ -90,6 +90,10 @@ void ModelAssimp::Render(GLfloat* mvpMat) {
 
     CheckGLError("ModelAssimp::Render");
 
+}
+
+std::vector<struct MeshInfo> ModelAssimp::getMeshes(){
+    return modelObject->getMeshes();
 }
 
 /**

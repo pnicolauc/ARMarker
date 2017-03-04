@@ -32,6 +32,13 @@ struct MeshInfo {
     GLuint  faceBuffer;
     GLuint  vertexBuffer;
     GLuint  textureCoordBuffer;
+
+    float* vertices;
+    float* texCoords;
+
+    unsigned short* indices;
+    int nVertices;
+    int nIndices;
 };
 
 class AssimpLoader {
@@ -43,6 +50,8 @@ public:
     void Render3DModel(GLfloat* mvpMat);
     bool Load3DModel(std::string modelFilename);
     void Delete3DModel();
+    std::vector<struct MeshInfo> getMeshes();
+
 
 private:
     void GenerateGLBuffers();

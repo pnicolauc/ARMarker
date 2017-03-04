@@ -40,6 +40,7 @@ public:
     void    MoveAction(float distanceX, float distanceY);
     int     GetScreenWidth() const { return screenWidth; }
     int     GetScreenHeight() const { return screenHeight; }
+    std::vector<struct MeshInfo> getMeshes();
 
 private:
     bool    initsDone;

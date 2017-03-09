@@ -31,7 +31,7 @@ class ModelAssimp {
 public:
     ModelAssimp();
     ~ModelAssimp();
-    void    PerformGLInits();
+    void    PerformGLInits(const char* obj,const char* mtl,const char* folder);
     void    Render(GLfloat* mvpMat);
     void    SetViewport(int width, int height);
     void    DoubleTapAction();

@@ -134,7 +134,7 @@ void AssimpLoader::GenerateGLBuffers() {
 /**
  * Read textures associated with all materials and load images to GL
  */
-bool AssimpLoader::LoadTexturesToGL(std::string modelFilename) {
+bool AssimpLoader::LoadTexturesToGL(std::string modelFilename,const char* folder) {
 
     // read names of textures associated with all materials
     textureNameMap.clear();
@@ -176,7 +176,9 @@ bool AssimpLoader::LoadTexturesToGL(std::string modelFilename) {
 
         std::string textureFilename = (*textureIterator).first;  // get filename
         std::string test;
-        gHelperObject->ExtractAssetReturnFilename("amenemhat/"+textureFilename, test);
+
+        std::string fld(folder);
+        gHelperObject->ExtractAssetReturnFilename(fld+textureFilename, test);
 
         std::string textureFullPath = modelDirectoryName + "/" + textureFilename;
         (*textureIterator).second = textureGLNames[i];	  // save texture id for filename in map
@@ -223,7 +225,7 @@ bool AssimpLoader::LoadTexturesToGL(std::string modelFilename) {
  * Loads a general OBJ with many meshes -- assumes texture is associated with each mesh
  * does not handle material properties (like diffuse, specular, etc.)
  */
-bool AssimpLoader::Load3DModel(std::string modelFilename) {
+bool AssimpLoader::Load3DModel(std::string modelFilename,const char* folder) {
 
     MyLOGI("Scene will be imported now");
     scene = importerPtr->ReadFile(modelFilename, aiProcessPreset_TargetRealtime_Quality);
@@ -236,7 +238,7 @@ bool AssimpLoader::Load3DModel(std::string modelFilename) {
     }
     MyLOGI("Imported %s successfully.", modelFilename.c_str());
 
-    if(!LoadTexturesToGL(modelFilename)) {
+    if(!LoadTexturesToGL(modelFilename,folder)) {
         MyLOGE("Unable to load textures");
         return false;
     }

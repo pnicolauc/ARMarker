@@ -48,14 +48,14 @@ public:
     ~AssimpLoader();
 
     void Render3DModel(GLfloat* mvpMat);
-    bool Load3DModel(std::string modelFilename);
+    bool Load3DModel(std::string modelFilename,const char* folder);
     void Delete3DModel();
     std::vector<struct MeshInfo> getMeshes();
 
 
 private:
     void GenerateGLBuffers();
-    bool LoadTexturesToGL(std::string modelFilename);
+    bool LoadTexturesToGL(std::string modelFilename,const char* folder);
 
     std::vector<struct MeshInfo> modelMeshes;       // contains one struct for every mesh in model
     Assimp::Importer *importerPtr;

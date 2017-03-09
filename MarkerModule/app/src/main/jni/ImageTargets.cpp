@@ -198,7 +198,10 @@ Java_markermodule_mavoar_com_markers_ImageTargets_switchDatasetAsap(JNIEnv* env,
 
 
 JNIEXPORT int JNICALL
-Java_markermodule_mavoar_com_markers_ImageTargets_initTracker(JNIEnv *env, jobject instance,jobject assetManager,jstring pathToInternalDir)
+Java_markermodule_mavoar_com_markers_ImageTargets_initTracker(
+JNIEnv *env, jobject instance,jobject assetManager,jstring pathToInternalDir,
+jstring obj,jstring mtl,jstring xml,jstring folder,jfloat scale, jint markerNum,
+ jobjectArray markerNames,jfloatArray markerRot,jfloatArray markerTra, jfloatArray markerSca)
 {
     LOG("Java_markermodule_mavoar_com_markers_ImageTargets_initTracker");
     /*Assimp::Importer *imp = new Assimp::Importer();
@@ -209,11 +212,24 @@ Java_markermodule_mavoar_com_markers_ImageTargets_initTracker(JNIEnv *env, jobje
     scene =imp->ReadFile( "crytek-sponza/sponza.obj",
            								aiProcessPreset_TargetRealtime_Quality);
 */
+    int markerN=(int)markerNum;
+
+    const char *objCPP;
+    objCPP = env->GetStringUTFChars(obj, NULL );
+
+    const char *mtlCPP;
+    mtlCPP = env->GetStringUTFChars(mtl, NULL );
+
+    const char *xmlCPP;
+    xmlCPP = env->GetStringUTFChars(xml, NULL );
+
+    const char *folderCPP;
+    folderCPP = env->GetStringUTFChars(folder, NULL ) ;
 
     gHelperObject = new MyJNIHelper(env, instance, assetManager, pathToInternalDir);
     gAssimpObject = new ModelAssimp();
 
-    gAssimpObject->PerformGLInits();
+    gAssimpObject->PerformGLInits(objCPP,mtlCPP,folderCPP);
 /*
     const int iVertexTotalSize = sizeof(aiVector3D)*2+sizeof(aiVector2D);
 

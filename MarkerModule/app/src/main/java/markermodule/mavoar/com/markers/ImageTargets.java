@@ -11,6 +11,7 @@ countries.
 package markermodule.mavoar.com.markers;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import android.app.Activity;
@@ -46,6 +47,7 @@ import com.vuforia.INIT_ERRORCODE;
 import com.vuforia.INIT_FLAGS;
 
 import markermodule.mavoar.com.R;
+import markermodule.mavoar.com.markers.dataset.Marker;
 import markermodule.mavoar.com.markers.ui.SampleAppMenu;
 import markermodule.mavoar.com.markers.ui.SampleAppMenuGroup;
 import markermodule.mavoar.com.markers.ui.SampleAppMenuInterface;
@@ -58,6 +60,12 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
     //dataset variables
     private String dataset_key;
     private String dataset_name;
+    private String dataset_obj;
+    private String dataset_mtl;
+    private String dataset_xml;
+    private String dataset_folder;
+    private float dataset_scale;
+    private ArrayList<Marker> dataset_markers;
 
 
     // Focus mode constants:
@@ -376,6 +384,12 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
 
         dataset_key = args.getString("key");
         dataset_name = args.getString("name");
+        dataset_obj = args.getString("obj");
+        dataset_mtl = args.getString("mtl");
+        dataset_xml = args.getString("xml");
+        dataset_folder = args.getString("folder");
+        dataset_scale = args.getFloat("scale");
+        dataset_markers = (ArrayList<Marker>) args.getSerializable("markers");
 
         /*// Load any sample specific textures:
         mTextures = new Vector<Texture>();
@@ -414,7 +428,9 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
     
     
     /** Native tracker initialization and deinitialization. */
-    public native int initTracker(AssetManager c, String pathToInternalDir);
+    public native int initTracker(AssetManager c, String pathToInternalDir,
+                                  String obj,String mtl,String xml,String folder,float scale, int markerNum,
+                                  String[] markerNames,float[] markerRot,float[] markerTra, float[] markerSca);
     
     
     public native void deinitTracker();
@@ -650,7 +666,35 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
             
             case APPSTATUS_INIT_TRACKER:
                 // Initialize the ObjectTracker:
-                if (initTracker(this.getAssets(),getFilesDir().getAbsolutePath()) > 0)
+                int markersNum= dataset_markers.size();
+                String markerNames[]=new String[markersNum];
+                float markerRot[]=new float[markersNum*4];
+                float markerTra[]=new float[markersNum*3];
+                float markerSca[]=new float[markersNum*3];
+
+                int i=0;
+                for(Marker m:dataset_markers){
+                    markerNames[i]=m.getName();
+
+                    markerRot[(i*4)]=m.getRotation().get(0);
+                    markerRot[(i*4)+1]=m.getRotation().get(1);
+                    markerRot[(i*4)+2]=m.getRotation().get(2);
+                    markerRot[(i*4)+3]=m.getRotation().get(3);
+
+                    markerTra[(i*3)]=m.getTranslation().get(0);
+                    markerTra[(i*3)+1]=m.getTranslation().get(1);
+                    markerTra[(i*3)+2]=m.getTranslation().get(2);
+
+                    markerSca[(i*3)]=m.getScale().get(0);
+                    markerSca[(i*3)+1]=m.getScale().get(1);
+                    markerSca[(i*3)+2]=m.getScale().get(2);
+
+                    i++;
+                }
+
+                if (initTracker(this.getAssets(),getFilesDir().getAbsolutePath(),
+                        dataset_obj,dataset_mtl,dataset_xml,dataset_folder,dataset_scale,markersNum,
+                        markerNames,markerRot,markerTra,markerSca) > 0)
                 {
                     // Proceed to next application initialization status:
                     updateApplicationStatus(APPSTATUS_INIT_APP_AR);

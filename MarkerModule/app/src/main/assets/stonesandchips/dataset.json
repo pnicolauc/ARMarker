@@ -3,19 +3,19 @@
   "modelFolder":"amenemhat",
   "obj":"amenemhat.obj",
   "mtl":"amenemhat.mtl",
-  "scale":0.03,
+  "scale":0.05,
   "xml":"StonesAndChips.xml",
   "markers":[
     {
       "name":"stones",
-      "rotation":[0.0,0.0,1.0,0.0],
-      "translation":[0.0,0.0,0.003],
+      "rotation":[200.0,1.0,1.0,1.0],
+      "translation":[0.05,0.0,0.0],
       "scale":[0.003,0.003,0.003]
     },
     {
       "name":"chips",
-      "rotation":[0.0,0.0,1.0,0.0],
-      "translation":[0.0,0.0,0.003],
+      "rotation":[90.0,1.0,0.0,1.0],
+      "translation":[0.0,0.0,0.0],
       "scale":[0.003,0.003,0.003]
     }
   ]

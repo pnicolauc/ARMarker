@@ -320,7 +320,7 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
             synchronized (mShutdownLock)
             {
                 // Load the tracker data set:
-                return (loadTrackerData() > 0);
+                return (loadTrackerData(dataset_xml) > 0);
             }
         }
         
@@ -437,7 +437,7 @@ public class ImageTargets extends Activity implements SampleAppMenuInterface
     
     
     /** Native functions to load and destroy tracking data. */
-    public native int loadTrackerData();
+    public native int loadTrackerData(String xml);
     
     
     public native void destroyTrackerData();

@@ -38,7 +38,7 @@ uniform sampler2D texSampler2D; \
  \
 void main() \
 { \
-   gl_FragColor.xyz = texture2D(texSampler2D, texCoord).xyz; \
+ gl_FragColor.xyz = texture2D(texSampler2D, texCoord).xyz; \
 } \
 ";
 

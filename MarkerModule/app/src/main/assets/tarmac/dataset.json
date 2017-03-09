@@ -3,6 +3,7 @@
   "modelFolder":"cube",
   "obj":"cube.obj",
   "mtl":"cube.mtl",
+  "scale":0.03,
   "xml":"Tarmac.xml",
   "markers":[
     {

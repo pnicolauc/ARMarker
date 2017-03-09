@@ -8,6 +8,15 @@ countries.
 #ifndef IMAGETARGETSNATIVE_IMAGETARGETS_H
 #define IMAGETARGETSNATIVE_IMAGETARGETS_H
 
+// info used to render a mesh
+struct Marker {
+    const char* name;
+
+    float rotation[3];
+    float translation[3];
+    float scale[3];
+};
+
 #ifdef __cplusplus
 extern "C"
 {

@@ -32,7 +32,7 @@ public class Dataset {
     public void setFolder(String folder){
         this.obj=folder+"/"+modelFolder + "/" +obj;
         this.mtl=folder+"/"+modelFolder + "/" +mtl;
-        this.xml=folder+"/"+modelFolder + "/" +xml;
+        this.xml=folder + "/" +xml;
         this.modelFolder=folder+"/"+modelFolder;
     }
 

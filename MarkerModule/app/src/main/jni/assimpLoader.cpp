@@ -178,7 +178,7 @@ bool AssimpLoader::LoadTexturesToGL(std::string modelFilename,const char* folder
         std::string test;
 
         std::string fld(folder);
-        gHelperObject->ExtractAssetReturnFilename(fld+textureFilename, test);
+        gHelperObject->ExtractAssetReturnFilename(fld+"/"+textureFilename, test);
 
         std::string textureFullPath = modelDirectoryName + "/" + textureFilename;
         (*textureIterator).second = textureGLNames[i];	  // save texture id for filename in map
@@ -200,9 +200,9 @@ bool AssimpLoader::LoadTexturesToGL(std::string modelFilename,const char* folder
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             // load the OpenCV Mat into GLES
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureImage.cols,
-                         textureImage.rows, 0, GL_RGB, GL_UNSIGNED_BYTE,
-                         textureImage.data);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureImage.cols,
+                         textureImage.rows, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                         (GLvoid*)textureImage.data);
             CheckGLError("AssimpLoader::loadGLTexGen");
 
         } else {
@@ -257,9 +257,9 @@ bool AssimpLoader::Load3DModel(std::string modelFilename,const char* folder) {
 void AssimpLoader::Delete3DModel() {
     if (isObjectLoaded) {
         // clear modelMeshes stuff
-//        for (unsigned int i = 0; i < modelMeshes.size(); ++i) {
-//            glDeleteTextures(1, &(modelMeshes[i].textureIndex));
-//        }
+        for (unsigned int i = 0; i < modelMeshes.size(); ++i) {
+            glDeleteTextures(1, &(modelMeshes[i].textureIndex));
+        }
         modelMeshes.clear();
 
         MyLOGI("Deleted Assimp object");

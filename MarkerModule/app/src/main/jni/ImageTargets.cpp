@@ -78,11 +78,10 @@ int screenHeight                = 0;
 bool isActivityInPortraitMode   = false;
 
 // Constants:
-static const float kObjectScale          = 0.03f;
-static const float kBuildingsObjectScale = 0.012f;
+float kObjectScale;
 
-Vuforia::DataSet* dataSetStonesAndChips  = 0;
-Vuforia::DataSet* dataSetTarmac          = 0;
+Vuforia::DataSet* dataSet  = 0;
+
 
 SampleAppRenderer* sampleAppRenderer = 0;
 
@@ -102,6 +101,8 @@ const aiScene* scene;
 
 bool bLoaded;
 
+std::map<std::string,Marker*> markers;
+Marker* currMarker;
 
 
 // global pointer to instance of MyJNIHelper that is used to read from assets
@@ -122,32 +123,15 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
             // Get the object tracker:
             Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
             Vuforia::ObjectTracker* objectTracker = static_cast<Vuforia::ObjectTracker*>(
-                trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
-            if (objectTracker == 0 || dataSetStonesAndChips == 0 || dataSetTarmac == 0 ||
-                objectTracker->getActiveDataSet(0) == 0)
+                        trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
+
+            if (objectTracker == 0)
             {
                 LOG("Failed to switch data set.");
                 return;
             }
-            
-            switch( selectedDataset )
-            {
-                case STONES_AND_CHIPS_DATASET_ID:
-                    if (objectTracker->getActiveDataSet(0) != dataSetStonesAndChips)
-                    {
-                        objectTracker->deactivateDataSet(dataSetTarmac);
-                        objectTracker->activateDataSet(dataSetStonesAndChips);
-                    }
-                    break;
-                    
-                case TARMAC_DATASET_ID:
-                    if (objectTracker->getActiveDataSet(0) != dataSetTarmac)
-                    {
-                        objectTracker->deactivateDataSet(dataSetStonesAndChips);
-                        objectTracker->activateDataSet(dataSetTarmac);
-                    }
-                    break;
-            }
+            objectTracker->activateDataSet(dataSet);
+
 
             if(isExtendedTrackingActivated)
             {
@@ -172,26 +156,9 @@ Java_markermodule_mavoar_com_markers_ImageTargets_setActivityPortraitMode(JNIEnv
     isActivityInPortraitMode = isPortrait;
 }
 
-/*
-std::string ConvertJString(JNIEnv* env, jstring str)
-{
-   if ( !str ) LString();
-
-   const jsize len = env->GetStringUTFLength(str);
-   const char* strChars = env->GetStringUTFChars(str, (jboolean *)0);
-
-   std::string Result(strChars, len);
-
-   env->ReleaseStringUTFChars(str, strChars);
-
-   return Result;
-}*/
-
 JNIEXPORT void JNICALL
 Java_markermodule_mavoar_com_markers_ImageTargets_switchDatasetAsap(JNIEnv* env, jobject, jstring dataset)
 {
-   // std::string dataset = ConvertJString( env, bitmappath );
-
     selectedDataset = 0;
     switchDataSetAsap = true;
 }
@@ -204,14 +171,39 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat scale, jint markerNum,
  jobjectArray markerNames,jfloatArray markerRot,jfloatArray markerTra, jfloatArray markerSca)
 {
     LOG("Java_markermodule_mavoar_com_markers_ImageTargets_initTracker");
-    /*Assimp::Importer *imp = new Assimp::Importer();
-    mgr = AAssetManager_fromJava(env, assetManager);
-    AAIOSystem* ioSystem = new AAIOSystem(mgr);
-    imp->SetIOHandler(ioSystem);
 
-    scene =imp->ReadFile( "crytek-sponza/sponza.obj",
-           								aiProcessPreset_TargetRealtime_Quality);
-*/
+    kObjectScale=(float)scale;
+    jfloat* rots = env->GetFloatArrayElements( markerRot,0);
+    jfloat* trans = env->GetFloatArrayElements( markerTra,0);
+    jfloat* scals = env->GetFloatArrayElements( markerSca,0);
+
+    for(unsigned int a=0;a<markerNum;a++){
+        Marker* marker= new Marker;
+
+        jstring string = (jstring) (env->GetObjectArrayElement(markerNames, a));
+        const char* na= env->GetStringUTFChars(string, NULL );
+
+        marker->name=na;
+
+        marker->rotation[0]=(float)rots[(a*3)];
+        marker->rotation[1]=(float)rots[(a*3)+1];
+        marker->rotation[2]=(float)rots[(a*3)+2];
+        marker->rotation[3]=(float)rots[(a*3)+3];
+
+        marker->translation[0]=(float)trans[(a*3)];
+        marker->translation[1]=(float)trans[(a*3)+1];
+        marker->translation[2]=(float)trans[(a*3)+2];
+
+        marker->scale[0]=(float)scals[(a*3)];
+        marker->scale[1]=(float)scals[(a*3)+1];
+        marker->scale[2]=(float)scals[(a*3)+2];
+
+        //std::string str(marker.name);
+        markers[marker->name] = marker;
+
+        currMarker = marker;
+    }
+
     int markerN=(int)markerNum;
 
     const char *objCPP;
@@ -230,10 +222,7 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat scale, jint markerNum,
     gAssimpObject = new ModelAssimp();
 
     gAssimpObject->PerformGLInits(objCPP,mtlCPP,folderCPP);
-/*
-    const int iVertexTotalSize = sizeof(aiVector3D)*2+sizeof(aiVector2D);
 
-   int iTotalVertices = 0;*/
 
 
     // Initialize the object tracker:
@@ -262,9 +251,14 @@ Java_markermodule_mavoar_com_markers_ImageTargets_deinitTracker(JNIEnv *, jobjec
 
 
 JNIEXPORT int JNICALL
-Java_markermodule_mavoar_com_markers_ImageTargets_loadTrackerData(JNIEnv *env, jobject)
+Java_markermodule_mavoar_com_markers_ImageTargets_loadTrackerData(JNIEnv *env, jobject,jstring xml)
 {
     LOG("Java_markermodule_mavoar_com_markers_ImageTargets_loadTrackerData");
+
+    const char *xmlFile;
+    xmlFile = env->GetStringUTFChars(xml, NULL );
+
+    LOG("XML FILE: %s",xmlFile);
 
     // Get the object tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
@@ -277,36 +271,21 @@ Java_markermodule_mavoar_com_markers_ImageTargets_loadTrackerData(JNIEnv *env, j
         return 0;
     }
 
-    // Create the data sets:
-    dataSetStonesAndChips = objectTracker->createDataSet();
-    if (dataSetStonesAndChips == 0)
+    // Create the data set:
+    dataSet=objectTracker->createDataSet();
+    if (dataSet == 0)
     {
         LOG("Failed to create a new tracking data.");
         return 0;
     }
-
-    dataSetTarmac = objectTracker->createDataSet();
-    if (dataSetTarmac == 0)
-    {
-        LOG("Failed to create a new tracking data.");
-        return 0;
-    }
-
     // Load the data sets:
-    if (!dataSetStonesAndChips->load("StonesAndChips.xml", Vuforia::STORAGE_APPRESOURCE))
+    if (!dataSet->load(xmlFile, Vuforia::STORAGE_APPRESOURCE))
     {
         LOG("Failed to load data set.");
         return 0;
     }
-
-    if (!dataSetTarmac->load("Tarmac.xml", Vuforia::STORAGE_APPRESOURCE))
-    {
-        LOG("Failed to load data set.");
-        return 0;
-    }
-
     // Activate the data set:
-    if (!objectTracker->activateDataSet(dataSetStonesAndChips))
+    if (!objectTracker->activateDataSet(dataSet))
     {
         LOG("Failed to activate data set.");
         return 0;
@@ -333,45 +312,13 @@ Java_markermodule_mavoar_com_markers_ImageTargets_destroyTrackerData(JNIEnv *, j
         return 0;
     }
 
-    if (dataSetStonesAndChips != 0)
+    if (!objectTracker->deactivateDataSet(dataSet))
     {
-        if (objectTracker->getActiveDataSet(0) == dataSetStonesAndChips &&
-            !objectTracker->deactivateDataSet(dataSetStonesAndChips))
-        {
-            LOG("Failed to destroy the tracking data set StonesAndChips because the data set "
-                "could not be deactivated.");
-            return 0;
-        }
-
-        if (!objectTracker->destroyDataSet(dataSetStonesAndChips))
-        {
-            LOG("Failed to destroy the tracking data set StonesAndChips.");
-            return 0;
-        }
-
-        LOG("Successfully destroyed the data set StonesAndChips.");
-        dataSetStonesAndChips = 0;
+        LOG("Failed to destroy the tracking data set StonesAndChips because the data set "
+            "could not be deactivated.");
+        return 0;
     }
 
-    if (dataSetTarmac != 0)
-    {
-        if (objectTracker->getActiveDataSet(0) == dataSetTarmac &&
-            !objectTracker->deactivateDataSet(dataSetTarmac))
-        {
-            LOG("Failed to destroy the tracking data set Tarmac because the data set "
-                "could not be deactivated.");
-            return 0;
-        }
-
-        if (!objectTracker->destroyDataSet(dataSetTarmac))
-        {
-            LOG("Failed to destroy the tracking data set Tarmac.");
-            return 0;
-        }
-
-        LOG("Successfully destroyed the data set Tarmac.");
-        dataSetTarmac = 0;
-    }
 
     return 1;
 }
@@ -426,21 +373,34 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
 
         // Choose the texture based on the target name:
-        /*int textureIndex;
-        if (strcmp(trackable.getName(), "chips") == 0)
+        //int textureIndex;
+        if (strcmp(trackable.getName(), currMarker->name) != 0)
         {
-            textureIndex = 0;
-        }*/
+            LOG("New marker %s",trackable.getName());
 
-
+            currMarker = markers[trackable.getName()];
+        }
         //const Texture* const thisTexture = textures[textureIndex];
 
         Vuforia::Matrix44F modelViewProjection;
 
-        SampleUtils::translatePoseMatrix(0.0f, 0.0f, kObjectScale,
+
+
+        SampleUtils::translatePoseMatrix(currMarker->translation[0],
+                                       currMarker->translation[1],
+                                        currMarker->translation[2],
                                          &modelViewMatrix.data[0]);
-        SampleUtils::scalePoseMatrix(kObjectScale, kObjectScale, kObjectScale,
-                                     &modelViewMatrix.data[0]);
+
+        SampleUtils::rotatePoseMatrix(currMarker->rotation[0],
+                                        currMarker->rotation[1],
+                                        currMarker->rotation[2] ,
+                                        currMarker->rotation[3],
+                                        &modelViewMatrix.data[0]);
+        SampleUtils::scalePoseMatrix(kObjectScale,
+                                    kObjectScale,
+                                    kObjectScale,
+                                    &modelViewMatrix.data[0]);
+
         SampleUtils::multiplyMatrix(&projectionMatrix.data[0],
                                     &modelViewMatrix.data[0] ,
                                     &modelViewProjection.data[0]);
@@ -466,13 +426,13 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                 }*/
 
             if (modelMeshes[n].textureIndex) {
-              /*  glActiveTexture(GL_TEXTURE0);
+                glActiveTexture(GL_TEXTURE0);
 
-                glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0*///);
+                glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0*/);
 
-               // glBindTexture( GL_TEXTURE_2D, modelMeshes[n].textureIndex);
+                glBindTexture( GL_TEXTURE_2D, modelMeshes[n].textureIndex);
 
-            }
+             }
              glVertexAttribPointer(vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
                                    (const GLvoid*)  (modelMeshes[n].vertices));
              glVertexAttribPointer(textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,

@@ -32,22 +32,11 @@ public:
     ModelAssimp();
     ~ModelAssimp();
     void    PerformGLInits(const char* obj,const char* mtl,const char* folder);
-    void    Render(GLfloat* mvpMat);
-    void    SetViewport(int width, int height);
-    void    DoubleTapAction();
-    void    ScrollAction(float distanceX, float distanceY, float positionX, float positionY);
-    void    ScaleAction(float scaleFactor);
-    void    MoveAction(float distanceX, float distanceY);
-    int     GetScreenWidth() const { return screenWidth; }
-    int     GetScreenHeight() const { return screenHeight; }
-    std::vector<struct MeshInfo> getMeshes();
-
+    std::vector<MeshInfo*> getMeshes();
+    std::vector<cv::Mat> getTextures();
 private:
     bool    initsDone;
-    int     screenWidth, screenHeight;
 
-    std::vector<float> modelDefaultPosition;
-    //MyGLCamera * myGLCamera;
     AssimpLoader * modelObject;
 };
 

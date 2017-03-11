@@ -21,6 +21,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <opencv2/opencv.hpp>
 
 #include "myGLM.h"
 #include "myGLFunctions.h"
@@ -32,6 +33,8 @@ struct MeshInfo {
     GLuint  faceBuffer;
     GLuint  vertexBuffer;
     GLuint  textureCoordBuffer;
+
+    unsigned int mTextureID;
 
     float* vertices;
     float* texCoords;
@@ -50,14 +53,18 @@ public:
     void Render3DModel(GLfloat* mvpMat);
     bool Load3DModel(std::string modelFilename,const char* folder);
     void Delete3DModel();
-    std::vector<struct MeshInfo> getMeshes();
-
+    std::vector<MeshInfo*> getMeshes();
+    std::vector<cv::Mat> getTextures();
 
 private:
     void GenerateGLBuffers();
     bool LoadTexturesToGL(std::string modelFilename,const char* folder);
 
-    std::vector<struct MeshInfo> modelMeshes;       // contains one struct for every mesh in model
+    std::vector<MeshInfo*> modelMeshes;       // contains one struct for every mesh in model
+    std::vector<cv::Mat> texturesCV;       // Textures
+
+
+
     Assimp::Importer *importerPtr;
     const aiScene* scene;                           // assimp's output data structure
     bool isObjectLoaded;

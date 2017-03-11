@@ -27,6 +27,9 @@ countries.
 #include <Vuforia/Tracker.h>
 #include <Vuforia/TrackerManager.h>
 #include <Vuforia/ObjectTracker.h>
+#include <Vuforia/DeviceTracker.h>
+#include <Vuforia/RotationalDeviceTracker.h>
+
 #include <Vuforia/CameraCalibration.h>
 #include <Vuforia/UpdateCallback.h>
 #include <Vuforia/DataSet.h>
@@ -54,6 +57,7 @@ countries.
 #include <assimp/DefaultLogger.hpp>
 #include "myJNIHelper.h"
 #include "modelAssimp.h"
+
 
 #ifdef __cplusplus
 extern "C"
@@ -124,7 +128,16 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
             Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
             Vuforia::ObjectTracker* objectTracker = static_cast<Vuforia::ObjectTracker*>(
                         trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
+            Vuforia::RotationalDeviceTracker deviceTracker = static_cast<Vuforia::RotationalDeviceTracker*>(
+                        trackerManager.initTracker(Vuforia:: RotationalDeviceTracker::getClassType()));
 
+            // activate pose prediction
+            deviceTracker->setPosePrediction(true);
+
+            // activate model correction: default neck model
+            deviceTracker->setModelCorrectionMode(deviceTracker->getDefaultHeadModel());
+            // start the tracker
+            deviceTracker->start();
             if (objectTracker == 0)
             {
                 LOG("Failed to switch data set.");
@@ -408,7 +421,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         glUseProgram(shaderProgramID);
 
 
-        std::vector<struct MeshInfo> modelMeshes= gAssimpObject->getMeshes();
+        std::vector<MeshInfo*> modelMeshes= gAssimpObject->getMeshes();
         unsigned int numberOfLoadedMeshes = modelMeshes.size();
 
         // render all meshes
@@ -425,26 +438,26 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                     glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0);
                 }*/
 
-            if (modelMeshes[n].textureIndex) {
+            if (modelMeshes[n]->mTextureID) {
                 glActiveTexture(GL_TEXTURE0);
 
                 glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0*/);
 
-                glBindTexture( GL_TEXTURE_2D, modelMeshes[n].textureIndex);
+                glBindTexture( GL_TEXTURE_2D, modelMeshes[n]->mTextureID);
 
              }
              glVertexAttribPointer(vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
-                                   (const GLvoid*)  (modelMeshes[n].vertices));
+                                   (const GLvoid*)  (modelMeshes[n]->vertices));
              glVertexAttribPointer(textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,
-                                  (const GLvoid*) (modelMeshes[n].texCoords));
+                                  (const GLvoid*) (modelMeshes[n]->texCoords));
 
              glEnableVertexAttribArray(vertexHandle);
              glEnableVertexAttribArray(textureCoordHandle);
              glUniformMatrix4fv(mvpMatrixHandle, 1, GL_FALSE,
              (GLfloat*)&modelViewProjection.data[0] );
 
-              glDrawElements(GL_TRIANGLES,  modelMeshes[n].nIndices, GL_UNSIGNED_SHORT,
-                            (const GLvoid*)(modelMeshes[n].indices));
+              glDrawElements(GL_TRIANGLES,  modelMeshes[n]->nIndices, GL_UNSIGNED_SHORT,
+                            (const GLvoid*)(modelMeshes[n]->indices));
 
 
             }
@@ -526,7 +539,7 @@ Java_markermodule_mavoar_com_markers_ImageTargets_initApplicationNative(
     // Handle to the activity class:
     jclass activityClass = env->GetObjectClass(obj);
 
-    /*jmethodID getTextureCountMethodID = env->GetMethodID(activityClass,
+    /*ljmethodID getTextureCountMethodID = env->GetMethodID(activityClass,
      //                                               "getTextureCount", "()I");
     if (getTextureCountMethodID == 0)
     {
@@ -765,17 +778,34 @@ Java_markermodule_mavoar_com_markers_ImageTargetsRenderer_initRendering(
     // Define clear color
     glClearColor(0.0f, 0.0f, 0.0f, Vuforia::requiresAlpha() ? 0.0f : 1.0f);
 
+    std::vector<cv::Mat> textures= gAssimpObject->getTextures();
+
+    std::vector<MeshInfo*> modelMeshes= gAssimpObject->getMeshes();
+    unsigned int numberOfLoadedMeshes = modelMeshes.size();
+
     // Now generate the OpenGL texture objects and add settings
-    /*for (int i = 0; i < textureCount; ++i)
+    for (int i = 0; i < numberOfLoadedMeshes; ++i)
     {
-        glGenTextures(1, &(textures[i]->mTextureID));
-        glBindTexture(GL_TEXTURE_2D, textures[i]->mTextureID);
+        if(textures.size()>i){
+        MeshInfo* meshinfo=modelMeshes.at(i);
+
+        cv::Mat texture= textures.at(i);
+
+        glGenTextures(1, &(meshinfo->mTextureID));
+        glBindTexture(GL_TEXTURE_2D, meshinfo->mTextureID);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textures[i]->mWidth,
-                textures[i]->mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                (GLvoid*)  textures[i]->mData);
-    }*/
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.cols,
+                texture.rows, 0, GL_RGB, GL_UNSIGNED_BYTE,
+                  texture.data );
+
+        MyLOGI("Cols:%d; Rows:%d;", texture.cols,texture.rows);
+        }
+        else{break;}
+
+    }
+
+
 
     shaderProgramID     = SampleUtils::createProgramFromBuffer(cubeMeshVertexShader,
                                                             cubeFragmentShader);

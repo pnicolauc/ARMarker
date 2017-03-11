@@ -30,14 +30,7 @@ AssimpLoader::AssimpLoader() {
     scene = NULL;
     isObjectLoaded = false;
 
-    // shader related setup -- loading, attribute and uniform locations
-    std::string vertexShader    = "shaders/modelTextured.vsh";
-    std::string fragmentShader  = "shaders/modelTextured.fsh";
-    shaderProgramID         = LoadShaders(vertexShader, fragmentShader);
-    vertexAttribute         = GetAttributeLocation(shaderProgramID, "vertexPosition");
-    vertexUVAttribute       = GetAttributeLocation(shaderProgramID, "vertexUV");
-    mvpLocation             = GetUniformLocation(shaderProgramID, "mvpMat");
-    textureSamplerLocation  = GetUniformLocation(shaderProgramID, "textureSampler");
+
 
     CheckGLError("AssimpLoader::AssimpLoader");
 }
@@ -61,7 +54,7 @@ void AssimpLoader::GenerateGLBuffers() {
 
 
 
-    struct MeshInfo newMeshInfo; // this struct is updated for each mesh in the model
+    MeshInfo* newMeshInfo= new MeshInfo; // this struct is updated for each mesh in the model
     GLuint buffer;
 
     // For every mesh -- load face indices, vertex positions, vertex texture coords
@@ -72,33 +65,33 @@ void AssimpLoader::GenerateGLBuffers() {
 
         // create array with faces
         // convert from Assimp's format to array for GLES
-        newMeshInfo.indices = new unsigned short[mesh->mNumFaces * 3];
+        newMeshInfo->indices = new unsigned short[mesh->mNumFaces * 3];
         unsigned int faceIndex = 0;
 
         for (unsigned int t = 0; t < mesh->mNumFaces; ++t) {
 
             // read a face from assimp's mesh and copy it into faceArray
             const aiFace *face = &mesh->mFaces[t];
-            newMeshInfo.indices[faceIndex]=(unsigned short)face->mIndices[0];
-            newMeshInfo.indices[faceIndex+1]=(unsigned short)face->mIndices[1];
-            newMeshInfo.indices[faceIndex+2]=(unsigned short)face->mIndices[2];
+            newMeshInfo->indices[faceIndex]=(unsigned short)face->mIndices[0];
+            newMeshInfo->indices[faceIndex+1]=(unsigned short)face->mIndices[1];
+            newMeshInfo->indices[faceIndex+2]=(unsigned short)face->mIndices[2];
 
 
             faceIndex += 3;
         }
 
-        newMeshInfo.numberOfFaces = mesh->mNumFaces;
-        newMeshInfo.nIndices = mesh->mNumFaces*3;
+        newMeshInfo->numberOfFaces = mesh->mNumFaces;
+        newMeshInfo->nIndices = mesh->mNumFaces*3;
 
         // buffer for vertex positions
         if (mesh->HasPositions()) {
-            newMeshInfo.nVertices=mesh->mNumVertices;
-            newMeshInfo.vertices=(float*)malloc(mesh->mNumVertices*3*sizeof(float));
+            newMeshInfo->nVertices=mesh->mNumVertices;
+            newMeshInfo->vertices=(float*)malloc(mesh->mNumVertices*3*sizeof(float));
 
             for(unsigned int t = 0; t < mesh->mNumVertices; ++t){
-                   newMeshInfo.vertices[t*3]=mesh->mVertices[t][0];
-                   newMeshInfo.vertices[(t*3)+1]=mesh->mVertices[t][1];
-                   newMeshInfo.vertices[(t*3)+2]=mesh->mVertices[t][2];
+                   newMeshInfo->vertices[t*3]=mesh->mVertices[t][0];
+                   newMeshInfo->vertices[(t*3)+1]=mesh->mVertices[t][1];
+                   newMeshInfo->vertices[(t*3)+2]=mesh->mVertices[t][2];
                }
 
         }
@@ -106,25 +99,25 @@ void AssimpLoader::GenerateGLBuffers() {
         // buffer for vertex texture coordinates
         // ***ASSUMPTION*** -- handle only one texture for each mesh
         if (mesh->HasTextureCoords(0)) {
-            newMeshInfo.texCoords = new float[2 * mesh->mNumVertices];
+            newMeshInfo->texCoords = new float[2 * mesh->mNumVertices];
             for (unsigned int k = 0; k < mesh->mNumVertices; ++k) {
-                newMeshInfo.texCoords[k * 2] = mesh->mTextureCoords[0][k].x;
-                newMeshInfo.texCoords[k * 2 + 1] = mesh->mTextureCoords[0][k].y;
+                newMeshInfo->texCoords[k * 2] = mesh->mTextureCoords[0][k].x;
+                newMeshInfo->texCoords[k * 2 + 1] = mesh->mTextureCoords[0][k].y;
             }
         }
 
-        // unbind buffers
+        /* unbind buffers
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);*/
 
         // copy texture index (= texture name in GL) for the mesh from textureNameMap
         aiMaterial *mtl = scene->mMaterials[mesh->mMaterialIndex];
         aiString texturePath;	//contains filename of texture
         if (AI_SUCCESS == mtl->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath)) {
             unsigned int textureId = textureNameMap[texturePath.data];
-            newMeshInfo.textureIndex = textureId;
+            newMeshInfo->textureIndex = textureId;
         } else {
-            newMeshInfo.textureIndex = 0;
+            newMeshInfo->textureIndex = 0;
         }
 
         modelMeshes.push_back(newMeshInfo);
@@ -163,7 +156,6 @@ bool AssimpLoader::LoadTexturesToGL(std::string modelFilename,const char* folder
 
     // create and fill array with texture names in GL
     GLuint * textureGLNames = new GLuint[numTextures];
-    glGenTextures(numTextures, textureGLNames);
 
     // Extract the directory part from the file name
     // will be used to read the texture
@@ -194,15 +186,8 @@ bool AssimpLoader::LoadTexturesToGL(std::string modelFilename,const char* folder
             // vertically flip the image
             cv::flip(textureImage, textureImage, 0);
 
-            // bind the texture
-            glBindTexture(GL_TEXTURE_2D, textureGLNames[i]);
-            // specify linear filtering
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            // load the OpenCV Mat into GLES
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureImage.cols,
-                         textureImage.rows, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                         (GLvoid*)textureImage.data);
+            texturesCV.push_back(textureImage);
+
             CheckGLError("AssimpLoader::loadGLTexGen");
 
         } else {
@@ -221,6 +206,9 @@ bool AssimpLoader::LoadTexturesToGL(std::string modelFilename,const char* folder
     return true;
 }
 
+std::vector<cv::Mat> AssimpLoader::getTextures(){
+    return texturesCV;
+}
 /**
  * Loads a general OBJ with many meshes -- assumes texture is associated with each mesh
  * does not handle material properties (like diffuse, specular, etc.)
@@ -258,7 +246,7 @@ void AssimpLoader::Delete3DModel() {
     if (isObjectLoaded) {
         // clear modelMeshes stuff
         for (unsigned int i = 0; i < modelMeshes.size(); ++i) {
-            glDeleteTextures(1, &(modelMeshes[i].textureIndex));
+            glDeleteTextures(1, &(modelMeshes[i]->textureIndex));
         }
         modelMeshes.clear();
 
@@ -267,7 +255,7 @@ void AssimpLoader::Delete3DModel() {
     }
 }
 
-std::vector<struct MeshInfo> AssimpLoader::getMeshes(){
+std::vector<MeshInfo*> AssimpLoader::getMeshes(){
     return modelMeshes;
 }
 /**
@@ -294,24 +282,24 @@ void AssimpLoader::Render3DModel(GLfloat* mvpMat) {
         MyLOGI("MESH");
 
         // Texture
-        if (modelMeshes[n].textureIndex) {
-            glBindTexture( GL_TEXTURE_2D, modelMeshes[n].textureIndex);
+        if (modelMeshes[n]->textureIndex) {
+            glBindTexture( GL_TEXTURE_2D, modelMeshes[n]->textureIndex);
         }
 
         // Faces
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelMeshes[n].faceBuffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, modelMeshes[n]->faceBuffer);
 
         // Vertices
-        glBindBuffer(GL_ARRAY_BUFFER, modelMeshes[n].vertexBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, modelMeshes[n]->vertexBuffer);
         glEnableVertexAttribArray(vertexAttribute);
         glVertexAttribPointer(vertexAttribute, 3, GL_FLOAT, 0, 0, 0);
 
         // Texture coords
-        glBindBuffer(GL_ARRAY_BUFFER, modelMeshes[n].textureCoordBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, modelMeshes[n]->textureCoordBuffer);
         glEnableVertexAttribArray(vertexUVAttribute);
         glVertexAttribPointer(vertexUVAttribute, 2, GL_FLOAT, 0, 0, 0);
 
-        glDrawElements(GL_TRIANGLES, modelMeshes[n].numberOfFaces * 3, GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLES, modelMeshes[n]->numberOfFaces * 3, GL_UNSIGNED_SHORT, 0);
 
         // unbind buffers
         glBindBuffer(GL_ARRAY_BUFFER, 0);

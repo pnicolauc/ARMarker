@@ -23,6 +23,8 @@ countries.
 #include <Vuforia/VideoBackgroundConfig.h>
 #include <Vuforia/Trackable.h>
 #include <Vuforia/TrackableResult.h>
+#include <Vuforia/DeviceTrackableResult.h>
+
 #include <Vuforia/Tool.h>
 #include <Vuforia/Tracker.h>
 #include <Vuforia/TrackerManager.h>
@@ -85,7 +87,7 @@ bool isActivityInPortraitMode   = false;
 float kObjectScale;
 
 Vuforia::DataSet* dataSet  = 0;
-
+Vuforia::RotationalDeviceTracker* deviceTracker=0;
 
 SampleAppRenderer* sampleAppRenderer = 0;
 
@@ -128,16 +130,7 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
             Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
             Vuforia::ObjectTracker* objectTracker = static_cast<Vuforia::ObjectTracker*>(
                         trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
-            Vuforia::RotationalDeviceTracker deviceTracker = static_cast<Vuforia::RotationalDeviceTracker*>(
-                        trackerManager.initTracker(Vuforia:: RotationalDeviceTracker::getClassType()));
 
-            // activate pose prediction
-            deviceTracker->setPosePrediction(true);
-
-            // activate model correction: default neck model
-            deviceTracker->setModelCorrectionMode(deviceTracker->getDefaultHeadModel());
-            // start the tracker
-            deviceTracker->start();
             if (objectTracker == 0)
             {
                 LOG("Failed to switch data set.");
@@ -155,6 +148,8 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
                     trackable->startExtendedTracking();
                 }
             }
+
+
 
         }
     }
@@ -248,6 +243,9 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat scale, jint markerNum,
     }
 
     LOG("Successfully initialized ObjectTracker.");
+
+
+
     return 1;
 }
 
@@ -283,6 +281,19 @@ Java_markermodule_mavoar_com_markers_ImageTargets_loadTrackerData(JNIEnv *env, j
             " been initialized.");
         return 0;
     }
+
+
+     deviceTracker = static_cast<Vuforia::RotationalDeviceTracker*>(
+     trackerManager.initTracker(Vuforia:: RotationalDeviceTracker::getClassType()));
+
+    // activate pose prediction
+    deviceTracker->setPosePrediction(false);
+
+    // activate model correction: default handheld model
+    deviceTracker->setModelCorrection((Vuforia::TransformModel*)deviceTracker->getDefaultHandheldModel());
+    // start the tracker
+    deviceTracker->start();
+
 
     // Create the data set:
     dataSet=objectTracker->createDataSet();
@@ -384,17 +395,25 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         Vuforia::Matrix44F modelViewMatrix =
         Vuforia::Tool::convertPose2GLMatrix(result->getPose());
 
+        if (result->isOfType(Vuforia::DeviceTrackableResult::getClassType())) {
+            const Vuforia::DeviceTrackableResult* deviceTrackableResult =
+                    static_cast<const Vuforia::DeviceTrackableResult*>(result);
 
-        // Choose the texture based on the target name:
-        //int textureIndex;
-        if (strcmp(trackable.getName(), currMarker->name) != 0)
+            LOG("Rotation device tracker");
+            SampleUtils::printMatrix44(&modelViewMatrix.data[0]);
+
+            // base device matrix that can be used for rendering (will need to be inverted), debug
+            //deviceMatrix = trackablePoseGLMatrix;
+        }
+        else if (strcmp(trackable.getName(), currMarker->name) != 0)
         {
             LOG("New marker %s",trackable.getName());
+            SampleUtils::printMatrix44(&modelViewMatrix.data[0]);
 
             currMarker = markers[trackable.getName()];
         }
-        //const Texture* const thisTexture = textures[textureIndex];
 
+        //const Texture* const thisTexture = textures[textureIndex];
         Vuforia::Matrix44F modelViewProjection;
 
 
@@ -426,22 +445,10 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
         // render all meshes
          for (unsigned int n = 0; n < numberOfLoadedMeshes; ++n) {
-
-          /*  glActiveTexture(GL_TEXTURE0);
-            glBindTexture( GL_TEXTURE_2D, modelMeshes.at(0).textureIndex);
-            glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0);
-                // Texture
-               /* if (modelMeshes[0].textureIndex) {
-                            glActiveTexture(GL_TEXTURE0);
-
-                    glBindTexture( GL_TEXTURE_2D, modelMeshes[0].textureIndex);
-                    glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0);
-                }*/
-
             if (modelMeshes[n]->mTextureID) {
                 glActiveTexture(GL_TEXTURE0);
 
-                glUniform1i(texSampler2DHandle, 0 /*GL_TEXTURE0*/);
+                glUniform1i(texSampler2DHandle, 0 );
 
                 glBindTexture( GL_TEXTURE_2D, modelMeshes[n]->mTextureID);
 

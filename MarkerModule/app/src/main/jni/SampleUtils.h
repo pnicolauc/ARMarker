@@ -40,6 +40,8 @@ public:
     /// Applies a rotation.
     static void rotatePoseMatrix(float angle, float x, float y, float z, 
         float* nMatrix = NULL);
+
+    static void printMatrix44(float* matrix);
     
     /// Applies a scaling transformation.
     static void scalePoseMatrix(float x, float y, float z, 

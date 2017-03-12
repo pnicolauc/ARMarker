@@ -16,6 +16,10 @@
   /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/Trackable.h \
   /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/Type.h \
   /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/TrackableResult.h \
+  /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/DeviceTrackableResult.h \
+  /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/DeviceTrackable.h \
+  /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/EyeID.h \
+  /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/TransformModel.h \
   /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/Tool.h \
   /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/Tracker.h \
   /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/TrackerManager.h \
@@ -264,6 +268,14 @@
 /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/Type.h:
 
 /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/TrackableResult.h:
+
+/home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/DeviceTrackableResult.h:
+
+/home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/DeviceTrackable.h:
+
+/home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/EyeID.h:
+
+/home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/TransformModel.h:
 
 /home/al/Dropbox/Tese/MAVOAR/MarkerModule/app/src/main/jni/../../../../vuforia-build/include/Vuforia/Tool.h:
 

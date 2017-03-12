@@ -67,6 +67,13 @@ SampleUtils::rotatePoseMatrix(float angle, float x, float y, float z,
     SampleUtils::multiplyMatrix(matrix, rotate_matrix, matrix);
 }
 
+void
+SampleUtils::printMatrix44(float *matrix){
+   LOG("Matrix:{\n %d %d %d %d \n %d %d %d %d \n %d %d %d %d \n %d %d %d %d \n}",
+   matrix[0],matrix[1],matrix[2],matrix[3],matrix[4],matrix[5],matrix[6],matrix[7],
+   matrix[8],matrix[9],matrix[10],matrix[11],matrix[12],matrix[13],matrix[14],matrix[15]);
+}
+
 
 void
 SampleUtils::scalePoseMatrix(float x, float y, float z, float* matrix)

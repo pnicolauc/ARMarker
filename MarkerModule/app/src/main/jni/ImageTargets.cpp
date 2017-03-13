@@ -89,6 +89,10 @@ float kObjectScale;
 Vuforia::DataSet* dataSet  = 0;
 Vuforia::RotationalDeviceTracker* deviceTracker=0;
 
+Vuforia::Matrix44F deviceMatrix;
+Vuforia::Matrix44F markerMatrix;
+
+
 SampleAppRenderer* sampleAppRenderer = 0;
 
 bool switchDataSetAsap           = false;
@@ -403,18 +407,53 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             SampleUtils::printMatrix44(&modelViewMatrix.data[0]);
 
             // base device matrix that can be used for rendering (will need to be inverted), debug
-            //deviceMatrix = trackablePoseGLMatrix;
+            deviceMatrix = modelViewMatrix;
         }
-        else if (strcmp(trackable.getName(), currMarker->name) != 0)
-        {
-            LOG("New marker %s",trackable.getName());
-            SampleUtils::printMatrix44(&modelViewMatrix.data[0]);
+        else{
+             if (strcmp(trackable.getName(), currMarker->name) != 0){
 
-            currMarker = markers[trackable.getName()];
+                LOG("New marker %s",trackable.getName());
+                SampleUtils::printMatrix44(&modelViewMatrix.data[0]);
+
+                currMarker = markers[trackable.getName()];
+                }
+
+             markerMatrix=modelViewMatrix;
+
+             // Convert between camera space and world space
+             /*Vuforia::Matrix44F convertCS;
+
+             MathUtils::makeRotationMatrix(180.0f, Vuforia::Vec3F(1.0f, 0.0f, 0.0f), convertCS);
+             MathUtils::multiplyMatrix(convertCS, markerMatrix, markerMatrix);*/
+
         }
 
         //const Texture* const thisTexture = textures[textureIndex];
         Vuforia::Matrix44F modelViewProjection;
+
+        /*float* convMat= new float[16];
+        convMat[0]=1;
+
+        convMat[6]=1;
+        convMat[9]=1;
+        convMat[15]=1;
+
+
+        SampleUtils::multiplyMatrix(&modelViewMatrix.data[0],
+                                    convMat ,
+                                    &modelViewMatrix.data[0]);*/
+
+
+        if(deviceMatrix.data[0] && markerMatrix.data[0] ){
+            SampleUtils::multiplyMatrix(&deviceMatrix.data[0],
+                                    &markerMatrix.data[0] ,
+                                    &modelViewMatrix.data[0]);
+        }
+
+        //float* m=
+
+        //invertMatrix(modelViewMatrix.data);
+        // SampleUtils::transposeMatrix(modelViewMatrix.data);
 
 
 
@@ -428,6 +467,8 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                         currMarker->rotation[2] ,
                                         currMarker->rotation[3],
                                         &modelViewMatrix.data[0]);
+
+
         SampleUtils::scalePoseMatrix(kObjectScale,
                                     kObjectScale,
                                     kObjectScale,
@@ -546,46 +587,6 @@ Java_markermodule_mavoar_com_markers_ImageTargets_initApplicationNative(
     // Handle to the activity class:
     jclass activityClass = env->GetObjectClass(obj);
 
-    /*ljmethodID getTextureCountMethodID = env->GetMethodID(activityClass,
-     //                                               "getTextureCount", "()I");
-    if (getTextureCountMethodID == 0)
-    {
-        LOG("Function getTextureCount() not found.");
-        return;
-    }
-
-    textureCount = env->CallIntMethod(obj, getTextureCountMethodID);
-    if (!textureCount)
-    {
-        LOG("getTextureCount() returned zero.");
-        return;
-    }
-
-    textures = new Texture*[textureCount];
-
-    jmethodID getTextureMethodID = env->GetMethodID(activityClass,
-        "getTexture", "(I)Lmarkermodule/mavoar/com/markers/Texture;");
-
-    if (getTextureMethodID == 0)
-    {
-        LOG("Function getTexture() not found.");
-        return;
-    }
-
-    // Register the textures
-    for (int i = 0; i < textureCount; ++i)
-    {
-
-        jobject textureObject = env->CallObjectMethod(obj, getTextureMethodID, i);
-        if (textureObject == NULL)
-        {
-            LOG("GetTexture() returned zero pointer");
-            return;
-        }
-
-        textures[i] = Texture::create(env, textureObject);
-    }
-    */
     LOG("Java_markermodule_mavoar_com_markers_ImageTargets_initApplicationNative finished");
 }
 
@@ -598,21 +599,6 @@ Java_markermodule_mavoar_com_markers_ImageTargets_deinitApplicationNative(
 
     isExtendedTrackingActivated = false;
 
-    /* Release texture resources
-    if (textures != 0)
-    {
-        for (int i = 0; i < textureCount; ++i)
-        {
-            delete textures[i];
-            textures[i] = NULL;
-        }
-
-        delete[]textures;
-        textures = NULL;
-
-        textureCount = 0;
-    }
-*/
     delete sampleAppRenderer;
     sampleAppRenderer = NULL;
 }

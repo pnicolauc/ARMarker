@@ -12,7 +12,7 @@ countries.
 struct Marker {
     const char* name;
 
-    float rotation[3];
+    float rotation[4];
     float translation[3];
     float scale[3];
 };

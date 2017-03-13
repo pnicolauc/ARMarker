@@ -41,12 +41,18 @@ public:
     static void rotatePoseMatrix(float angle, float x, float y, float z, 
         float* nMatrix = NULL);
 
+    static float* invertMatrix(float* m);
+
     static void printMatrix44(float* matrix);
     
     /// Applies a scaling transformation.
     static void scalePoseMatrix(float x, float y, float z, 
         float* nMatrix = NULL);
-    
+
+    /// transposes matrix
+    static float* transposeMatrix(float* matrix);
+
+
     /// Multiplies the two matrices A and B and writes the result to C.
     static void multiplyMatrix(float *matrixA, float *matrixB, 
         float *matrixC);

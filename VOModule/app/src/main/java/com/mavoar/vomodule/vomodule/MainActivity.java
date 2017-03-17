@@ -1,29 +1,34 @@
 package com.mavoar.vomodule.vomodule;
 
-import android.support.v7.app.AppCompatActivity;
+import android.app.Activity;
+import android.content.Intent;
+import android.hardware.Camera;
 import android.os.Bundle;
-import android.widget.TextView;
+import android.util.Log;
+import android.view.WindowManager;
 
-public class MainActivity extends AppCompatActivity {
+import org.opencv.android.JavaCameraView;
 
-    // Used to load the 'native-lib' library on application startup.
-    static {
-        System.loadLibrary("native-lib");
-    }
+/**
+ * Created by al on 16-03-2017.
+ */
 
+public class MainActivity  extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        // Example of a call to a native method
-        TextView tv = (TextView) findViewById(R.id.sample_text);
-        tv.setText(stringFromJNI());
+        Camera camera= Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
+        final Camera.Parameters params = camera.getParameters();
+        float fl = params.getFocalLength();
+        camera.release();
+
+        Intent vo =  new Intent(MainActivity.this, VisualOdometry.class);
+        vo.putExtra("fl",fl);
+
+
+        MainActivity.this.startActivity(vo);
+
     }
-
-    /**
-     * A native method that is implemented by the 'native-lib' native library,
-     * which is packaged with this application.
-     */
-    public native String stringFromJNI();
 }

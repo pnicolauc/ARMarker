@@ -3,6 +3,11 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
+
+    sourceSets.main {
+        jni.srcDirs = []
+        jniLibs.srcDir "src/main/libs"
+    }
     defaultConfig {
         applicationId "com.mavoar.vomodule.vomodule"
         minSdkVersion 15
@@ -16,16 +21,54 @@ android {
             }
         }
     }
+    archivesBaseName = rootProject.projectDir.getName()
+
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            ndk {
+                abiFilters "armeabi-v7a"
+            }
+        }
+        debug {
+            minifyEnabled false
+            debuggable true
+            ndk {
+                abiFilters "armeabi-v7a"
+
+            }
         }
     }
-    externalNativeBuild {
-        cmake {
-            path "CMakeLists.txt"
+    task buildNative(type: Exec, description: 'Compile JNI source via NDK') {
+        println('compiling jni code with ndk-build...')
+        def ndkDir = android.ndkDirectory
+        if (System.properties['os.name'].toLowerCase().contains('windows')) {
+            commandLine "$ndkDir/ndk-build.cmd",
+                    '-C', file('src/main/jni').absolutePath
+            // Additional ndk-build arguments, such as NDK_DEBUG, can be provided here
+        } else {
+            commandLine "$ndkDir/ndk-build",
+                    '-C', file('src/main/jni').absolutePath
+            // Additional ndk-build arguments, such as NDK_DEBUG, can be provided here
         }
+    }
+    task cleanNative(type: Exec, description: 'Clean JNI object files') {
+        def ndkDir = android.ndkDirectory
+        if (System.properties['os.name'].toLowerCase().contains('windows')) {
+            commandLine "$ndkDir/ndk-build.cmd",
+                    '-C', file('src/main/jni').absolutePath,
+                    'clean'
+        } else {
+            commandLine "$ndkDir/ndk-build",
+                    '-C', file('src/main/jni').absolutePath,
+                    'clean'
+        }
+    }
+
+    clean.dependsOn 'cleanNative'
+
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn buildNative
     }
 }
 
@@ -37,4 +80,5 @@ dependencies {
     compile 'com.android.support:appcompat-v7:25.2.0'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     testCompile 'junit:junit:4.12'
+    compile project(path: ':openCVLibrary310')
 }

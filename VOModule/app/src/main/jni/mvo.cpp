@@ -6,7 +6,8 @@
 #include <android/log.h>
 
 #include "opencv2/opencv.hpp"
-
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
 
 using namespace cv;
 
@@ -14,17 +15,6 @@ Stage stage;
 struct Frames frames;
 struct Camera camera;
 struct Matrices matrices;
-
-Mat prev_frame;
-Mat curr_frame;
-vector<Point2f> prev_features;
-
-Mat R_f, t_f;
-
-//double focal = 718.8560;
-//cv::Point2d pp(607.1928, 185.2157);
-Mat E, R, t, mask;
-
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -44,21 +34,21 @@ void initialFix(){
     try
         {
         vector<Point2f> points1, points2; //vectors to store the coordinates of the feature points
-        featureDetection(prev_frame, points1); //detect features in img_1
+        featureDetection(frames.prev_frame, points1); //detect features in img_1
 
         if(points1.size()>0){
             vector < uchar > status;
-            featureTracking(prev_frame, curr_frame, points1, points2, status); //track those features to img_2
+            featureTracking(frames.prev_frame, frames.curr_frame, points1, points2, status); //track those features to img_2
 
             if(points2.size()>0){
 
-                E = findEssentialMat(points2, points1, camera.focal, camera.pp, RANSAC, 0.999, 1.0, mask);
-                recoverPose(E, points2, points1, R, t, camera.focal, camera.pp, mask);
+                matrices.essential = findEssentialMat(points2, points1, camera.focal, camera.pp, RANSAC, 0.999, 1.0, matrices.mask);
+                recoverPose(matrices.essential, points2, points1, matrices.rotation, matrices.translation, camera.focal, camera.pp, matrices.mask);
 
-                prev_features = points2;
+                frames.prev_features = points2;
 
-                R_f = R.clone();
-                t_f = t.clone();
+                matrices.total_rotation = matrices.rotation.clone();
+                matrices.total_translation = matrices.translation.clone();
 
                 stage=WAITING_FRAME;
 
@@ -78,22 +68,21 @@ void initialFix(){
 
 void mvoDetectAndTrack(){
     try{
-        vector < Point2f > currFeatures;
         vector < uchar > status;
-        featureTracking(prev_frame, curr_frame, prev_features, currFeatures, status);
+        featureTracking(frames.prev_frame, frames.curr_frame, frames.prev_features, frames.curr_features, status);
 
-        if(currFeatures.size()>0){
+        if(frames.curr_features.size()>0){
 
-            E = findEssentialMat(currFeatures, prev_features, camera.focal, camera.pp, RANSAC, 0.999,
-                    1.0, mask);
-            recoverPose(E, currFeatures, prev_features, R, t, camera.focal, camera.pp, mask);
+            matrices.essential = findEssentialMat(frames.curr_features, frames.prev_features, camera.focal, camera.pp, RANSAC, 0.999,
+                    1.0, matrices.mask);
+            recoverPose(matrices.essential, frames.curr_features, frames.prev_features, matrices.rotation, matrices.translation, camera.focal, camera.pp, matrices.mask);
 
-            //Mat prevPts(2, prev_features.size(), CV_64F), currPts(2, currFeatures.size(),
+            //Mat prevPts(2, frames.prev_features.size(), CV_64F), currPts(2, currFeatures.size(),
             //        CV_64F);
 
-            /*for (int i = 0; i < prev_features.size(); i++) { //this (x,y) combination makes sense as observed from the source code of triangulatePoints on GitHub
-                prevPts.at<double>(0, i) = prev_features.at(i).x;
-                prevPts.at<double>(1, i) = prev_features.at(i).y;
+            /*for (int i = 0; i < frames.prev_features.size(); i++) { //this (x,y) combination makes sense as observed from the source code of triangulatePoints on GitHub
+                prevPts.at<double>(0, i) = frames.prev_features.at(i).x;
+                prevPts.at<double>(1, i) = frames.prev_features.at(i).y;
 
                 currPts.at<double>(0, i) = currFeatures.at(i).x;
                 currPts.at<double>(1, i) = currFeatures.at(i).y;
@@ -107,7 +96,7 @@ void mvoDetectAndTrack(){
             R_f = R * R_f;
 
             //}*/
-            prev_features = currFeatures;
+            frames.prev_features = frames.curr_features;
         }
         else{
             stage=WAITING_FIRST_FRAME;
@@ -120,35 +109,44 @@ void mvoDetectAndTrack(){
     }
 }
 
+
 extern "C"
-JNIEXPORT void JNICALL
+JNIEXPORT jstring JNICALL
 Java_com_mavoar_vomodule_vomodule_VisualOdometry_processFrame(
         JNIEnv *env,
         jobject /* this */,
         jlong matAddrGray) {
     LOGD("Received Frame");
 
+    jstring returnString;
     switch(stage){
         case WAITING_FIRST_FRAME:
             LOGD("First Frame");
             stage=WAITING_SECOND_FRAME;
 
-            prev_frame = ((Mat*)matAddrGray)->clone();
+            frames.prev_frame = ((Mat*)matAddrGray)->clone();
+            returnString = env->NewStringUTF("Fixing");
+
             break;
         case WAITING_SECOND_FRAME:
             LOGD("Second Frame");
 
-            curr_frame = (*(Mat*)matAddrGray);
+            frames.curr_frame = (*(Mat*)matAddrGray);
 
             initialFix();
+            returnString = env->NewStringUTF("Fixing");
+
             break;
         case WAITING_FRAME:
             LOGD("Normal Frame");
-            prev_frame = curr_frame.clone();
-            curr_frame = *(Mat *) matAddrGray;
+            frames.prev_frame = frames.curr_frame.clone();
+            frames.curr_frame = *(Mat *) matAddrGray;
             mvoDetectAndTrack();
+            returnString = env->NewStringUTF("Tracking");
+
             break;
-    }
+        }
+        return returnString;
 }
 
 

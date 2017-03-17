@@ -16,13 +16,14 @@ using namespace std;
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 
 enum Stage { WAITING_FIRST_FRAME, WAITING_SECOND_FRAME, WAITING_FRAME };
-#define MIN_NUM_FEAT 2000
+#define MIN_NUM_FEAT 40
 
 
 struct Frames {
    Mat prev_frame;
    Mat curr_frame;
    vector<Point2f> prev_features;
+   vector<Point2f> curr_features;
 };
 
 struct Camera {
@@ -31,6 +32,9 @@ struct Camera {
 };
 
 struct Matrices {
+    Mat total_rotation;
+    Mat total_translation;
+
     Mat essential;
     Mat rotation;
     Mat translation;

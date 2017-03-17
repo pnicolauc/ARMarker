@@ -14,7 +14,10 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener;
 import org.opencv.android.JavaCameraView;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
@@ -54,7 +57,13 @@ public class VisualOdometry extends Activity implements CameraBridgeViewBase.CvC
     public void onResume()
     {
         super.onResume();
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_6, this, mLoaderCallback);
+        if (!OpenCVLoader.initDebug()) {
+            Log.d("OpenCV", "Internal OpenCV library not found. Using OpenCV Manager for initialization");
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
+        } else {
+            Log.d("OpenCV", "OpenCV library found inside package. Using it!");
+            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+        }
     }
 
     @Override
@@ -86,10 +95,18 @@ public class VisualOdometry extends Activity implements CameraBridgeViewBase.CvC
         Mat matGray = inputFrame.gray();
 
         Imgproc.resize( matGray, matGray, downscaled );
-        processFrame(matGray.getNativeObjAddr());
+        String message=processFrame(matGray.getNativeObjAddr());
         Imgproc.resize( matGray, matGray, upscaled );
 
-        return matGray;
+        Mat rgb= inputFrame.rgba();
+
+        Imgproc.putText(rgb,message,new Point(10, 50),               // point
+                Core.FONT_HERSHEY_SIMPLEX ,      // front face
+                1,                               // front scale
+                new Scalar(0, 0, 0),             // Scalar object for color
+                4 );
+
+        return rgb;
     }
 
     @Override
@@ -102,5 +119,5 @@ public class VisualOdometry extends Activity implements CameraBridgeViewBase.CvC
      * which is packaged with this application.
      */
     public native void init(float focalLength,float ppx,float ppy);
-    public native void processFrame(long matPointer);
+    public native String processFrame(long matPointer);
 }

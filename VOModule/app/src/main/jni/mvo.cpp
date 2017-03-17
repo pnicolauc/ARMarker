@@ -87,15 +87,15 @@ void mvoDetectAndTrack(){
                 currPts.at<double>(0, i) = currFeatures.at(i).x;
                 currPts.at<double>(1, i) = currFeatures.at(i).y;
             }*/
+            float scale=1.0;
+            if ((scale > 0.1) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))
+                    && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))) {
 
-            //if ((scale > 0.1) /*&& (t.at<double>(2) > t.at<double>(0)*/)
-                    //&& (t.at<double>(2) > t.at<double>(1))) {
 
-            /*float scale=1.0;
-            t_f = t_f + scale * (R_f * t);
-            R_f = R * R_f;
+                matrices.total_translation = matrices.total_translation + scale * (matrices.total_rotation * matrices.translation);
+                matrices.total_rotation = matrices.rotation * matrices.total_rotation;
 
-            //}*/
+            }
             frames.prev_features = frames.curr_features;
         }
         else{
@@ -107,6 +107,17 @@ void mvoDetectAndTrack(){
         LOGD("Exception caught. resetting stages.");
         stage=WAITING_FIRST_FRAME;
     }
+}
+
+jstring returnMessage(JNIEnv *env,char str[]){
+
+ char buffer [100];
+ sprintf (buffer, "%s - %f %f %f",str,matrices.total_translation.at<double>(0),
+ matrices.total_translation.at<double>(1),matrices.total_translation.at<double>(2));
+
+ LOGD("%s",buffer);
+
+ return env->NewStringUTF(buffer);
 }
 
 
@@ -134,7 +145,9 @@ Java_com_mavoar_vomodule_vomodule_VisualOdometry_processFrame(
             frames.curr_frame = (*(Mat*)matAddrGray);
 
             initialFix();
-            returnString = env->NewStringUTF("Fixing");
+            returnString = returnMessage(env,"Fixing");
+
+
 
             break;
         case WAITING_FRAME:
@@ -142,7 +155,7 @@ Java_com_mavoar_vomodule_vomodule_VisualOdometry_processFrame(
             frames.prev_frame = frames.curr_frame.clone();
             frames.curr_frame = *(Mat *) matAddrGray;
             mvoDetectAndTrack();
-            returnString = env->NewStringUTF("Tracking");
+            returnString = returnMessage(env,"Tracking");
 
             break;
         }

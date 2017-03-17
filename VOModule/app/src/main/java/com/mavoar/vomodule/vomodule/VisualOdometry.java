@@ -32,8 +32,12 @@ public class VisualOdometry extends Activity implements CameraBridgeViewBase.CvC
     private CameraBridgeViewBase mOpenCvCameraView;
     private String TAG= "COISO";
 
+    private int ratio= 8;
+
     private Size downscaled;
     private Size upscaled;
+    private SensorListener msensorListener;
+    double scale=0.0;
 
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -75,13 +79,15 @@ public class VisualOdometry extends Activity implements CameraBridgeViewBase.CvC
         Log.i(TAG, "focal length: "+ fl);
 
 
+        msensorListener = new SensorListener(this);
+
         mOpenCvCameraView = new JavaCameraView(this, -1);
         setContentView(mOpenCvCameraView);
         mOpenCvCameraView.setCvCameraViewListener(this);
     }
     @Override
     public void onCameraViewStarted(int width, int height) {
-        downscaled = new Size(width/4,height/4);
+        downscaled = new Size(width/ratio,height/ratio);
         upscaled = new Size(width,height);
 
         float ppx = ((float)width)/2.0f;
@@ -112,6 +118,12 @@ public class VisualOdometry extends Activity implements CameraBridgeViewBase.CvC
     @Override
     public void onCameraViewStopped() {
         //mRgba.release();
+    }
+
+    private double getScalefromSensorListener(){
+        scale = msensorListener.getScale();
+
+        return scale;
     }
 
     /**

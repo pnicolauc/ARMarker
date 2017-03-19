@@ -99,14 +99,22 @@ public class VisualOdometry extends Activity implements CameraBridgeViewBase.CvC
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         Mat matGray = inputFrame.gray();
+        double scale=getScalefromSensorListener();
 
         Imgproc.resize( matGray, matGray, downscaled );
-        String message=processFrame(matGray.getNativeObjAddr());
+        String message=processFrame(matGray.getNativeObjAddr(),scale);
         Imgproc.resize( matGray, matGray, upscaled );
+
 
         Mat rgb= inputFrame.rgba();
 
         Imgproc.putText(rgb,message,new Point(10, 50),               // point
+                Core.FONT_HERSHEY_SIMPLEX ,      // front face
+                1,                               // front scale
+                new Scalar(0, 0, 0),             // Scalar object for color
+                4 );
+
+        Imgproc.putText(rgb,scale+"",new Point(10, 200),               // point
                 Core.FONT_HERSHEY_SIMPLEX ,      // front face
                 1,                               // front scale
                 new Scalar(0, 0, 0),             // Scalar object for color
@@ -131,5 +139,5 @@ public class VisualOdometry extends Activity implements CameraBridgeViewBase.CvC
      * which is packaged with this application.
      */
     public native void init(float focalLength,float ppx,float ppy);
-    public native String processFrame(long matPointer);
+    public native String processFrame(long matPointer,double scale);
 }

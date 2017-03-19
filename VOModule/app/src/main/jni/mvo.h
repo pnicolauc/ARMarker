@@ -20,6 +20,7 @@ enum Stage { WAITING_FIRST_FRAME, WAITING_SECOND_FRAME, WAITING_FRAME };
 
 
 struct Frames {
+   double scale;
    Mat prev_frame;
    Mat curr_frame;
    vector<Point2f> prev_features;

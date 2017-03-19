@@ -47,8 +47,14 @@ void initialFix(){
 
                 frames.prev_features = points2;
 
-                matrices.total_rotation = matrices.rotation.clone();
-                matrices.total_translation = matrices.translation.clone();
+                matrices.total_rotation = (matrices.rotation.clone());
+
+                if(matrices.total_translation.size().width ==0){
+                    matrices.total_translation = (matrices.translation.clone()* frames.scale);
+                }else{
+                    matrices.total_translation = matrices.total_translation + frames.scale * (matrices.total_rotation * matrices.translation);
+                }
+
 
                 stage=WAITING_FRAME;
 
@@ -77,22 +83,11 @@ void mvoDetectAndTrack(){
                     1.0, matrices.mask);
             recoverPose(matrices.essential, frames.curr_features, frames.prev_features, matrices.rotation, matrices.translation, camera.focal, camera.pp, matrices.mask);
 
-            //Mat prevPts(2, frames.prev_features.size(), CV_64F), currPts(2, currFeatures.size(),
-            //        CV_64F);
-
-            /*for (int i = 0; i < frames.prev_features.size(); i++) { //this (x,y) combination makes sense as observed from the source code of triangulatePoints on GitHub
-                prevPts.at<double>(0, i) = frames.prev_features.at(i).x;
-                prevPts.at<double>(1, i) = frames.prev_features.at(i).y;
-
-                currPts.at<double>(0, i) = currFeatures.at(i).x;
-                currPts.at<double>(1, i) = currFeatures.at(i).y;
-            }*/
-            float scale=1.0;
-            if ((scale > 0.1) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))
+            if ((frames.scale > 0.05) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))
                     && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))) {
 
 
-                matrices.total_translation = matrices.total_translation + scale * (matrices.total_rotation * matrices.translation);
+                matrices.total_translation = matrices.total_translation + frames.scale * (matrices.total_rotation * matrices.translation);
                 matrices.total_rotation = matrices.rotation * matrices.total_rotation;
 
             }
@@ -126,8 +121,11 @@ JNIEXPORT jstring JNICALL
 Java_com_mavoar_vomodule_vomodule_VisualOdometry_processFrame(
         JNIEnv *env,
         jobject /* this */,
-        jlong matAddrGray) {
+        jlong matAddrGray,
+        jdouble scale) {
     LOGD("Received Frame");
+
+    frames.scale= (double)scale;
 
     jstring returnString;
     switch(stage){
@@ -141,13 +139,9 @@ Java_com_mavoar_vomodule_vomodule_VisualOdometry_processFrame(
             break;
         case WAITING_SECOND_FRAME:
             LOGD("Second Frame");
-
             frames.curr_frame = (*(Mat*)matAddrGray);
-
             initialFix();
             returnString = returnMessage(env,"Fixing");
-
-
 
             break;
         case WAITING_FRAME:

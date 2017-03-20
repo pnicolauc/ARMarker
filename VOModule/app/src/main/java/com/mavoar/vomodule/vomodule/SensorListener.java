@@ -26,6 +26,9 @@ public class SensorListener implements SensorEventListener {
 	private float[] Vel={0,0,0};
 	
 	private float[] Cal={0,0,0};
+
+	//Rotation
+	private float[] Rot={0,0,0};
 	
 	int calibration = 1;
 	
@@ -39,10 +42,13 @@ public class SensorListener implements SensorEventListener {
         
       //Sensors
         Sensor sAcc = mSMan.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+		Sensor sRot = mSMan.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+
+		int rate=SensorManager.SENSOR_DELAY_GAME;
         
-        int rate=SensorManager.SENSOR_DELAY_GAME;
-        
-        mSMan.registerListener(this, sAcc, rate);        
+        mSMan.registerListener(this, sAcc, rate);
+		mSMan.registerListener(this, sRot, rate);
+
 	}
 	
     protected void pause() {
@@ -54,10 +60,18 @@ public class SensorListener implements SensorEventListener {
     }
     
     public double getScale(){
-    	double scale= Math.sqrt( Math.pow(Pos[0],2) + Math.pow(Pos[1],2) + Math.pow(Pos[2],2) );
-    	
+    	double scale= /*Math.abs(*/Math.sqrt( Math.pow(Pos[0],2) + Math.pow(Pos[1],2) + Math.pow(Pos[2],2) )/*)*/;
+
+		Pos[0] =0;
+		Pos[1] =0;
+		Pos[2] =0;
+
     	return scale;
     }
+
+	public float[] getRot(){
+		return Rot;
+	}
     
     public double getScaleUnfilteredAcc(){
     	double scale= Math.sqrt( Math.pow(dAcc[0],2) + Math.pow(dAcc[1],2) + Math.pow(dAcc[2],2) );
@@ -93,7 +107,7 @@ public class SensorListener implements SensorEventListener {
     		dAcc[1]=event.values[1];
     		dAcc[2]=event.values[2];
     		
-    		/*if(calibration <=10 && (dAcc[0]!= 0.0f | dAcc[1]!= 0.0f | dAcc[2]!= 0.0f)){
+    		/* if(calibration <=10 && (dAcc[0]!= 0.0f | dAcc[1]!= 0.0f | dAcc[2]!= 0.0f)){
     			Cal[0] += dAcc[0];
     			Cal[1] += dAcc[1];
     			Cal[2] += dAcc[2];
@@ -139,9 +153,9 @@ public class SensorListener implements SensorEventListener {
     				Vel[1]= (finalAcc[1] + prevAcc[1])/2.0f + deltaTime ;
     				Vel[2]= (finalAcc[2] + prevAcc[2])/2.0f + deltaTime ;
 
-    				Pos[0] = Vel[0] * deltaTime;
-    				Pos[1] = Vel[1] * deltaTime;
-    				Pos[2] = Vel[2] * deltaTime;
+    				Pos[0] += Vel[0] * deltaTime;
+    				Pos[1] += Vel[1] * deltaTime;
+    				Pos[2] += Vel[2] * deltaTime;
     				   				
     				     				
     				samplesAcc[0]=0;
@@ -151,7 +165,12 @@ public class SensorListener implements SensorEventListener {
     				deltaTime=0;
     			}
     		//}    		   		
-    	}		
+    	}
+    	else{
+			Rot[0]=event.values[0];
+			Rot[1]=event.values[1];
+			Rot[2]=event.values[2];
+		}
     }
     
     protected float[] lowPass( float[] input, float[] output ) { 

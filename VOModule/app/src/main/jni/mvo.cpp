@@ -15,6 +15,7 @@ Stage stage;
 struct Frames frames;
 struct Camera camera;
 struct Matrices matrices;
+struct Sensors sensors;
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -28,7 +29,11 @@ Java_com_mavoar_vomodule_vomodule_VisualOdometry_init(
     camera.pp.y= (float) ppy;
 }
 
-
+void setRotationFromSensor(){
+    matrices.total_rotation.at<double>(0)= sensors.rotation[0];
+    matrices.total_rotation.at<double>(1)= sensors.rotation[1];
+    matrices.total_rotation.at<double>(2)= sensors.rotation[2];
+}
 
 void initialFix(){
     try
@@ -47,12 +52,14 @@ void initialFix(){
 
                 frames.prev_features = points2;
 
-                matrices.total_rotation = (matrices.rotation.clone());
 
                 if(matrices.total_translation.size().width ==0){
-                    matrices.total_translation = (matrices.translation.clone()* frames.scale);
+                    matrices.total_rotation = matrices.rotation.clone();
+                    setRotationFromSensor();
+
+                    matrices.total_translation = (matrices.translation.clone()* sensors.scale);
                 }else{
-                    matrices.total_translation = matrices.total_translation + frames.scale * (matrices.total_rotation * matrices.translation);
+                    matrices.total_translation = matrices.total_translation + sensors.scale * (matrices.total_rotation * matrices.translation);
                 }
 
 
@@ -74,6 +81,8 @@ void initialFix(){
 
 void mvoDetectAndTrack(){
     try{
+
+        setRotationFromSensor();
         vector < uchar > status;
         featureTracking(frames.prev_frame, frames.curr_frame, frames.prev_features, frames.curr_features, status);
 
@@ -83,12 +92,11 @@ void mvoDetectAndTrack(){
                     1.0, matrices.mask);
             recoverPose(matrices.essential, frames.curr_features, frames.prev_features, matrices.rotation, matrices.translation, camera.focal, camera.pp, matrices.mask);
 
-            if ((frames.scale > 0.05) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))
+            if ((sensors.scale > 0.05) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))
                     && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))) {
 
 
-                matrices.total_translation = matrices.total_translation + frames.scale * (matrices.total_rotation * matrices.translation);
-                matrices.total_rotation = matrices.rotation * matrices.total_rotation;
+                matrices.total_translation = matrices.total_translation + sensors.scale * (matrices.total_rotation * matrices.translation);
 
             }
             frames.prev_features = frames.curr_features;
@@ -110,6 +118,9 @@ jstring returnMessage(JNIEnv *env,char str[]){
  sprintf (buffer, "%s - %f %f %f",str,matrices.total_translation.at<double>(0),
  matrices.total_translation.at<double>(1),matrices.total_translation.at<double>(2));
 
+ //sprintf (buffer, "%s - %f %f %f",str,matrices.total_rotation.at<double>(0),
+ //matrices.total_rotation.at<double>(1),matrices.total_rotation.at<double>(2));
+
  LOGD("%s",buffer);
 
  return env->NewStringUTF(buffer);
@@ -122,10 +133,13 @@ Java_com_mavoar_vomodule_vomodule_VisualOdometry_processFrame(
         JNIEnv *env,
         jobject /* this */,
         jlong matAddrGray,
-        jdouble scale) {
+        jdouble scale,
+        jfloatArray rotation) {
     LOGD("Received Frame");
 
-    frames.scale= (double)scale;
+    sensors.scale= (double)scale;
+    sensors.rotation= (float*)env->GetFloatArrayElements( rotation,0);
+
 
     jstring returnString;
     switch(stage){

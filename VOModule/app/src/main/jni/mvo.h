@@ -20,7 +20,6 @@ enum Stage { WAITING_FIRST_FRAME, WAITING_SECOND_FRAME, WAITING_FRAME };
 
 
 struct Frames {
-   double scale;
    Mat prev_frame;
    Mat curr_frame;
    vector<Point2f> prev_features;
@@ -40,6 +39,11 @@ struct Matrices {
     Mat rotation;
     Mat translation;
     Mat mask;
+};
+
+struct Sensors {
+    double scale;
+    float* rotation;
 };
 
 #endif //VOMODULE_MVO_H

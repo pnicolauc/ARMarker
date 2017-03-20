@@ -100,9 +100,10 @@ public class VisualOdometry extends Activity implements CameraBridgeViewBase.CvC
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         Mat matGray = inputFrame.gray();
         double scale=getScalefromSensorListener();
+        float[] rot=msensorListener.getRot();
 
         Imgproc.resize( matGray, matGray, downscaled );
-        String message=processFrame(matGray.getNativeObjAddr(),scale);
+        String message=processFrame(matGray.getNativeObjAddr(),scale,rot);
         Imgproc.resize( matGray, matGray, upscaled );
 
 
@@ -111,13 +112,19 @@ public class VisualOdometry extends Activity implements CameraBridgeViewBase.CvC
         Imgproc.putText(rgb,message,new Point(10, 50),               // point
                 Core.FONT_HERSHEY_SIMPLEX ,      // front face
                 1,                               // front scale
-                new Scalar(0, 0, 0),             // Scalar object for color
+                new Scalar(255, 0, 0),             // Scalar object for color
                 4 );
 
         Imgproc.putText(rgb,scale+"",new Point(10, 200),               // point
                 Core.FONT_HERSHEY_SIMPLEX ,      // front face
                 1,                               // front scale
-                new Scalar(0, 0, 0),             // Scalar object for color
+                new Scalar(255, 0, 0),             // Scalar object for color
+                4 );
+
+        Imgproc.putText(rgb,rot[0]+" " +rot[1]+" "+rot[2],new Point(10, 300),               // point
+                Core.FONT_HERSHEY_SIMPLEX ,      // front face
+                1,                               // front scale
+                new Scalar(255, 0, 0),             // Scalar object for color
                 4 );
 
         return rgb;
@@ -139,5 +146,5 @@ public class VisualOdometry extends Activity implements CameraBridgeViewBase.CvC
      * which is packaged with this application.
      */
     public native void init(float focalLength,float ppx,float ppy);
-    public native String processFrame(long matPointer,double scale);
+    public native String processFrame(long matPointer,double scale,float[] rot);
 }

@@ -8,4 +8,9 @@ A augmented reality application for large environment virtualization.
 * Assimp 3D model loading
 * OpenCV for Monocular Visual Odometry algorithm and Texture loading
 
+## Projects
+### VO Module
+### Marker Module
+### MAVOAR
+
 

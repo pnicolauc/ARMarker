@@ -65,7 +65,7 @@ OPENGLES_DEF  := -DUSE_OPENGL_ES_2_0
 # The flag "-Wno-psabi" removes warning about "mangling of 'va_list' has
 #   changed in GCC 4.4" when compiled with certain Android NDK versions.
 
-LOCAL_CFLAGS := -Wno-write-strings -Wno-psabi $(OPENGLES_DEF) -std=c++11
+LOCAL_CFLAGS := -Wno-write-strings -Wno-psabi $(OPENGLES_DEF) -std=c++11 -frtti -fexceptions -w
 
 # The list of additional linker flags to be used when building your
 # module. Use the "-l" prefix in front of the name of libraries you want to
@@ -87,7 +87,7 @@ LOCAL_SHARED_LIBRARIES := Vuforia-prebuilt Assimp-prebuilt Opencv-prebuilt
 # compute dependencies automatically for you, just list the source files
 # that will be passed directly to a compiler.
 
-LOCAL_SRC_FILES := AAIOStream.cpp AAIOSystem.cpp ImageTargets.cpp SampleAppRenderer.cpp SampleUtils.cpp Texture.cpp myJNIHelper.cpp misc.cpp modelAssimp.cpp myShader.cpp assimpLoader.cpp myGLFunctions.cpp
+LOCAL_SRC_FILES := markers/ImageTargets.cpp renderer/SampleAppRenderer.cpp renderer/SampleUtils.cpp renderer/myJNIHelper.cpp utils/misc.cpp renderer/modelAssimp.cpp renderer/myShader.cpp renderer/assimpLoader.cpp renderer/myGLFunctions.cpp
 
 # By default, ARM target binaries will be generated in 'thumb' mode, where
 # each instruction is 16-bit wide. You can set this variable to 'arm' to

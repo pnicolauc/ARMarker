@@ -50,10 +50,18 @@ public class MenuActivity extends AppCompatActivity {
         spinnerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spin.setAdapter(spinnerArrayAdapter);
 
+        final Spinner mod_spin= (Spinner) findViewById(R.id.modules);
 
         start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+                switch (mod_spin.getSelectedItemPosition()){
+                    case 0:
+                        break;
+                    case 1:
+                        
+                }
                 int pos= spin.getSelectedItemPosition();
 
                 SimpleDatasetInfo chosenDataset=datasets.get(pos);

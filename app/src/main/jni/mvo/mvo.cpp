@@ -16,18 +16,25 @@ struct Frames frames;
 struct Camera camera;
 struct Matrices matrices;
 struct Sensors sensors;
+jstring returnString;
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_mavoar_activities_VOModule_init(
-        JNIEnv *env,
-        jobject /* this */,jfloat focalLength,jfloat ppx,jfloat ppy) {
-    LOGD("init");
+JNIEnv *envgl;
+
+void mvoInit(float focalLength,float ppx,float ppy){
+    LOGD("mvo init");
     stage=WAITING_FIRST_FRAME;
     camera.focal = (float) focalLength;
     camera.pp.x= (float) ppx;
     camera.pp.y= (float) ppy;
 }
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_mavoar_activities_VOModule_init(
+        JNIEnv *env,
+        jobject /* this */,jfloat focalLength,jfloat ppx,jfloat ppy) {
+    mvoInit(focalLength,ppx,ppy);
+}
+
 
 void setRotationFromSensor(){
     matrices.total_rotation.at<double>(0)= sensors.rotation[0];
@@ -127,6 +134,46 @@ jstring returnMessage(JNIEnv *env,char str[]){
 }
 
 
+void mvo_processFrame(jlong matAddrGray,
+        jdouble scale,
+float* rotation) {
+LOGD("Received Frame");
+
+sensors.scale= (double)scale;
+sensors.rotation= rotation;
+
+    switch(stage){
+        case WAITING_FIRST_FRAME:
+                LOGD("First Frame");
+            stage=WAITING_SECOND_FRAME;
+            frames.prev_frame = ((Mat*)matAddrGray)->clone();
+            if(envgl)
+                returnString = envgl->NewStringUTF("Fixing");
+
+            break;
+        case WAITING_SECOND_FRAME:
+            LOGD("Second Frame");
+            frames.curr_frame = (*(Mat*)matAddrGray);
+            initialFix();
+            if(envgl)
+                returnString = returnMessage(envgl,"Fixing");
+        break;
+        case WAITING_FRAME:
+                LOGD("Normal Frame");
+        frames.prev_frame = frames.curr_frame.clone();
+        frames.curr_frame = *(Mat *) matAddrGray;
+        mvoDetectAndTrack();
+        if(envgl)
+            returnString = returnMessage(envgl,"Tracking");
+
+
+        break;
+    }
+    LOGD("Received Frame");
+
+}
+
+
 extern "C"
 JNIEXPORT jstring JNICALL
 Java_com_mavoar_activities_VOModule_processFrame(
@@ -136,12 +183,11 @@ Java_com_mavoar_activities_VOModule_processFrame(
         jdouble scale,
         jfloatArray rotation) {
     LOGD("Received Frame");
+    envgl=env;
+    mvo_processFrame(matAddrGray, scale,(float*)env->GetFloatArrayElements( rotation,0));
 
-    sensors.scale= (double)scale;
-    sensors.rotation= (float*)env->GetFloatArrayElements( rotation,0);
 
-
-    jstring returnString;
+    /*jstring returnString;
     switch(stage){
         case WAITING_FIRST_FRAME:
             LOGD("First Frame");
@@ -166,7 +212,7 @@ Java_com_mavoar_activities_VOModule_processFrame(
             returnString = returnMessage(env,"Tracking");
 
             break;
-        }
+        }*/
         return returnString;
 }
 

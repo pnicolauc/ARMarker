@@ -25,7 +25,7 @@ public class MarkerModule extends Activity {
         DebugLog.LOGD("onCreate");
         super.onCreate(savedInstanceState);
 
-        imageTargets = new ImageTargets(getIntent().getExtras(),MarkerModule.this,0.5);
+        imageTargets = new ImageTargets(getIntent().getExtras(),MarkerModule.this,0.5,false);
     }
 
     protected void onResume()

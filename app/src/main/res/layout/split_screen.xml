@@ -7,17 +7,17 @@
 
         <org.opencv.android.JavaCameraView
             android:layout_width="300dp"
-            android:layout_height="match_parent"
+            android:layout_height="300dp"
             android:visibility="gone"
             android:id="@+id/java_surface_view"
             opencv:show_fps="true"
-            android:layout_weight="0.5"
             opencv:camera_id="any" />
 
-        <com.mavoar.renderer.VuforiaSampleGLView
+        <android.opengl.GLSurfaceView
+            android:id="@+id/vuforia_surface_view"
             android:layout_width="300dp"
             android:layout_height="300dp"
              />
 
 
-        </LinearLayout>
+</LinearLayout>

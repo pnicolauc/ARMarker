@@ -40,7 +40,7 @@ countries.
 #include <Vuforia/GLRenderer.h>
 #include <Vuforia/StateUpdater.h>
 #include <Vuforia/ViewList.h>
-
+#import <Vuforia/Image.h>
 
 #include <renderer/SampleUtils.h>
 #include <renderer/CubeShaders.h>
@@ -54,6 +54,12 @@ countries.
 #include <assimp/DefaultLogger.hpp>
 #include <renderer/myJNIHelper.h>
 #include <renderer/modelAssimp.h>
+
+#include <utils/SampleMath.h>
+
+#include <mvo/mvo.h>
+
+#include "opencv2/opencv.hpp"
 
 
 #ifdef __cplusplus
@@ -113,11 +119,45 @@ MyJNIHelper * gHelperObject=NULL;
 // global pointer is used in JNI calls to reference to same object of type Cube
 ModelAssimp *gAssimpObject =NULL;
 
+
+using namespace cv;
+Mat curr_frame;
+bool mvo;
+float fl;
+bool init = false;
+
+
+jdouble scale;
+float* rotation;
+
+Vuforia::Matrix44F modelViewMatrix;
+
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
-{   
-    virtual void Vuforia_onUpdate(Vuforia::State& /*state*/)
+{
+    virtual void Vuforia_onUpdate(Vuforia::State& state)
     {
+        Vuforia::Frame frame = state.getFrame();
+        LOG("images in frame %d.",frame.getNumImages());
+
+        for (int i = 0; i < frame.getNumImages(); ++i) {
+            const Vuforia::Image *image = frame.getImage(i);
+            if (image->getFormat() == Vuforia::RGB565) {
+                //LOG("init %d mvo %d",init, mvo);
+                if(!init && mvo){
+                    mvoInit(fl,(float)(image->getHeight()/16.0),(float)(image->getWidth()/16.0));
+                    init=true;
+                }
+                curr_frame = Mat(image->getHeight(),image->getWidth(),CV_8UC2,(unsigned char *)image->getPixels());
+                resize(curr_frame, curr_frame, Size(image->getHeight()/8, image->getHeight()/8), 0, 0, INTER_CUBIC); // resize to 1024x768 resolution
+                cvtColor(curr_frame, curr_frame, CV_BGR5652GRAY);
+
+
+                LOG("Saving frame as Mat. SIZE: %d %d.",image->getHeight(),image->getWidth());
+                //imwrite( "curr_frame.jpg", curr_frame );
+
+            }
+        }
         if (switchDataSetAsap)
         {
             switchDataSetAsap = false;
@@ -172,9 +212,10 @@ JNIEXPORT int JNICALL
 Java_com_mavoar_markers_ImageTargets_initTracker(
 JNIEnv *env, jobject instance,jobject assetManager,jstring pathToInternalDir,
 jstring obj,jstring mtl,jstring xml,jstring folder,jfloat scale, jint markerNum,
- jobjectArray markerNames,jfloatArray markerRot,jfloatArray markerTra, jfloatArray markerSca)
+ jobjectArray markerNames,jfloatArray markerRot,jfloatArray markerTra, jfloatArray markerSca,jboolean jmvo)
 {
     LOG("Java_com_mavoar_markers_ImageTargets_initTracker");
+    mvo = jmvo;
 
     kObjectScale=(float)scale;
     jfloat* rots = env->GetFloatArrayElements( markerRot,0);
@@ -357,8 +398,10 @@ Java_com_mavoar_markers_ImageTargets_onVuforiaInitializedNative(JNIEnv *, jobjec
 
 
 JNIEXPORT void JNICALL
-Java_com_mavoar_renderer_GLRenderer_renderFrame(JNIEnv *, jobject)
+Java_com_mavoar_renderer_GLRenderer_renderFrame(JNIEnv *env, jobject, jdouble sc, jfloatArray r)
 {
+    scale = sc;
+    rotation = (float*)env->GetFloatArrayElements( r,0);
     // Call renderFrame from SampleAppRenderer which will loop through the rendering primitives
     // views and then it will call renderFrameForView per each of the views available,
     // in this case there is only one view since it is not rendering in stereo mode
@@ -382,92 +425,73 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     else
         glFrontFace(GL_CCW);   //Back camera
 
+
+    LOG("NUmber of trackables: %d",state->getNumTrackableResults());
+
     // Did we find any trackables this frame?
-    for(int tIdx = 0; tIdx < state->getNumTrackableResults(); tIdx++)
-    {
+    if(state->getNumTrackableResults() <=1 && mvo && init){
+        mvo_processFrame((long)&curr_frame,scale,rotation);
+    }
+
+    for(int tIdx = 0; tIdx < state->getNumTrackableResults(); tIdx++) {
         // Get the trackable:
-        const Vuforia::TrackableResult* result = state->getTrackableResult(tIdx);
-        const Vuforia::Trackable& trackable = result->getTrackable();
-        Vuforia::Matrix44F modelViewMatrix =
-        Vuforia::Tool::convertPose2GLMatrix(result->getPose());
+        const Vuforia::TrackableResult *result = state->getTrackableResult(tIdx);
+        const Vuforia::Trackable &trackable = result->getTrackable();
+        modelViewMatrix =
+                Vuforia::Tool::convertPose2GLMatrix(result->getPose());
 
         if (result->isOfType(Vuforia::DeviceTrackableResult::getClassType())) {
-            const Vuforia::DeviceTrackableResult* deviceTrackableResult =
-                    static_cast<const Vuforia::DeviceTrackableResult*>(result);
+            const Vuforia::DeviceTrackableResult *deviceTrackableResult =
+                    static_cast<const Vuforia::DeviceTrackableResult *>(result);
 
             LOG("Rotation device tracker");
             SampleUtils::printMatrix44(&modelViewMatrix.data[0]);
 
             // base device matrix that can be used for rendering (will need to be inverted), debug
-            deviceMatrix = modelViewMatrix;
-        }
-        else{
-             if (strcmp(trackable.getName(), currMarker->name) != 0){
+            deviceMatrix = modelViewMatrix;//SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(modelViewMatrix));
 
-                LOG("New marker %s",trackable.getName());
+        } else {
+            if (strcmp(trackable.getName(), currMarker->name) != 0) {
+
+                LOG("New marker %s", trackable.getName());
                 SampleUtils::printMatrix44(&modelViewMatrix.data[0]);
 
                 currMarker = markers[trackable.getName()];
-                }
+            }
 
-             markerMatrix=modelViewMatrix;
 
-             // Convert between camera space and world space
-             /*Vuforia::Matrix44F convertCS;
-
-             MathUtils::makeRotationMatrix(180.0f, Vuforia::Vec3F(1.0f, 0.0f, 0.0f), convertCS);
-             MathUtils::multiplyMatrix(convertCS, markerMatrix, markerMatrix);*/
-
+            markerMatrix = modelViewMatrix;
         }
+    }
+    Vuforia::Matrix44F modelViewProjection;
 
-        //const Texture* const thisTexture = textures[textureIndex];
-        Vuforia::Matrix44F modelViewProjection;
+    Vuforia::Matrix44F joinedmv;
 
-        /*float* convMat= new float[16];
-        convMat[0]=1;
-
-        convMat[6]=1;
-        convMat[9]=1;
-        convMat[15]=1;
-
-
-        SampleUtils::multiplyMatrix(&modelViewMatrix.data[0],
-                                    convMat ,
-                                    &modelViewMatrix.data[0]);*/
-
-
-        if(deviceMatrix.data[0] && markerMatrix.data[0] ){
+    if(deviceMatrix.data[0] && markerMatrix.data[0] ){
             SampleUtils::multiplyMatrix(&deviceMatrix.data[0],
                                     &markerMatrix.data[0] ,
-                                    &modelViewMatrix.data[0]);
+                                    &joinedmv.data[0]);
         }
-
-        //float* m=
-
-        //invertMatrix(modelViewMatrix.data);
-        // SampleUtils::transposeMatrix(modelViewMatrix.data);
-
-
 
         SampleUtils::translatePoseMatrix(currMarker->translation[0],
                                        currMarker->translation[1],
                                         currMarker->translation[2],
-                                         &modelViewMatrix.data[0]);
+                                         &joinedmv.data[0]);
 
         SampleUtils::rotatePoseMatrix(currMarker->rotation[0],
                                         currMarker->rotation[1],
                                         currMarker->rotation[2] ,
                                         currMarker->rotation[3],
-                                        &modelViewMatrix.data[0]);
+                                        &joinedmv.data[0]);
 
 
         SampleUtils::scalePoseMatrix(kObjectScale,
                                     kObjectScale,
                                     kObjectScale,
-                                    &modelViewMatrix.data[0]);
+                                    &joinedmv.data[0]);
 
         SampleUtils::multiplyMatrix(&projectionMatrix.data[0],
-                                    &modelViewMatrix.data[0] ,
+                                    &joinedmv.data[0] ,
                                     &modelViewProjection.data[0]);
 
         glUseProgram(shaderProgramID);
@@ -504,7 +528,8 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
             SampleUtils::checkGlError("ImageTargets renderFrame");
 
-    }
+    //
+    // }
 
 
     glDisable(GL_DEPTH_TEST);
@@ -619,6 +644,8 @@ Java_com_mavoar_markers_ImageTargets_startCamera(JNIEnv *,
     // Start the camera:
     if (!Vuforia::CameraDevice::getInstance().start())
         return;
+
+    Vuforia::setFrameFormat(Vuforia::RGB565, true);
 
     // Uncomment to enable flash
     //if(Vuforia::CameraDevice::getInstance().setFlashTorchMode(true))

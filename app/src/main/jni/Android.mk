@@ -87,7 +87,7 @@ LOCAL_SHARED_LIBRARIES := Vuforia-prebuilt Assimp-prebuilt Opencv-prebuilt
 # compute dependencies automatically for you, just list the source files
 # that will be passed directly to a compiler.
 
-LOCAL_SRC_FILES := markers/ImageTargets.cpp renderer/SampleAppRenderer.cpp renderer/SampleUtils.cpp renderer/myJNIHelper.cpp utils/misc.cpp renderer/modelAssimp.cpp renderer/myShader.cpp renderer/assimpLoader.cpp renderer/myGLFunctions.cpp mvo/mvo.cpp mvo/mvo_features.cpp
+LOCAL_SRC_FILES :=  mvo/mvo.cpp mvo/mvo_features.cpp markers/ImageTargets.cpp renderer/SampleAppRenderer.cpp renderer/SampleUtils.cpp renderer/myJNIHelper.cpp utils/misc.cpp utils/SampleMath.cpp renderer/modelAssimp.cpp renderer/myShader.cpp renderer/assimpLoader.cpp renderer/myGLFunctions.cpp
 
 # By default, ARM target binaries will be generated in 'thumb' mode, where
 # each instruction is 16-bit wide. You can set this variable to 'arm' to

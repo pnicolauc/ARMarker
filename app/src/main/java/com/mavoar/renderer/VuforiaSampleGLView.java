@@ -17,6 +17,7 @@ import javax.microedition.khronos.egl.EGLDisplay;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
+import android.util.AttributeSet;
 
 import com.mavoar.utils.DebugLog;
 
@@ -34,6 +35,10 @@ public class VuforiaSampleGLView extends GLSurfaceView
     {
         super(context);
 
+    }
+
+    public VuforiaSampleGLView(Context context, AttributeSet attrs) {
+        super(context, attrs);
     }
     
     

@@ -1,6 +1,8 @@
 //
 // Created by al on 15-03-2017.
 //
+#include <jni.h>
+
 #include "opencv2/opencv.hpp"
 using namespace cv;
 using namespace std;
@@ -18,6 +20,11 @@ using namespace std;
 enum Stage { WAITING_FIRST_FRAME, WAITING_SECOND_FRAME, WAITING_FRAME };
 #define MIN_NUM_FEAT 40
 
+
+void mvoInit(float focalLength,float ppx,float ppy);
+void mvo_processFrame(jlong matAddrGray,
+                      jdouble scale,
+                      float* rotation);
 
 struct Frames {
    Mat prev_frame;
@@ -42,8 +49,8 @@ struct Matrices {
 };
 
 struct Sensors {
-    double scale;
-    float* rotation;
+    volatile double scale;
+    volatile float* rotation;
 };
 
 #endif //VOMODULE_MVO_H

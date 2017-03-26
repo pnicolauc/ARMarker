@@ -12,10 +12,13 @@ package com.mavoar.renderer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import android.app.Activity;
 import android.opengl.GLSurfaceView;
+import android.view.animation.AccelerateInterpolator;
 
 import com.mavoar.markers.ImageTargets;
 import com.mavoar.utils.DebugLog;
+import com.mavoar.vo.SensorListener;
 import com.vuforia.Vuforia;
 
 
@@ -71,7 +74,7 @@ public class GLRenderer implements GLSurfaceView.Renderer
     
 
     /** The native render function. */
-    public native void renderFrame();
+    public native void renderFrame(double scale,float[] rotation);
     
     
     /** Called to draw the current frame. */
@@ -84,6 +87,6 @@ public class GLRenderer implements GLSurfaceView.Renderer
         mActivity.updateRenderView();
         
         // Call our native function to render content
-        renderFrame();
+        renderFrame(SensorListener.getScale(),SensorListener.getRot());
     }
 }

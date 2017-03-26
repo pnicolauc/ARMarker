@@ -23,6 +23,7 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
+import android.opengl.GLSurfaceView;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -65,6 +66,7 @@ public class ImageTargets
     private String dataset_folder;
     private float dataset_scale;
     private ArrayList<Marker> dataset_markers;
+    private boolean mvo;
 
     private double ratio;
 
@@ -336,9 +338,10 @@ public class ImageTargets
      * Called when the activity first starts or the user navigates back to an
      * activity.
      */
-    public ImageTargets(Bundle args,Activity activity,double ratio){
+    public ImageTargets(Bundle args,Activity activity,double ratio,boolean mvo){
         this.activity = activity;
-        ratio = ratio;
+        this.ratio = ratio;
+        this.mvo = mvo;
         dataset_key = args.getString("key");
         dataset_name = args.getString("name");
         dataset_obj = args.getString("obj");
@@ -358,38 +361,11 @@ public class ImageTargets
         mIsDroidDevice = android.os.Build.MODEL.toLowerCase().startsWith(
                 "droid");
     }
-    protected void onCreate(Bundle savedInstanceState)
-    {
-        DebugLog.LOGD("onCreate");
-        //super.onCreate(savedInstanceState);
-
-        //Intent i= getIntent();
-       /* Bundle args = i.getExtras();
-
-        dataset_key = args.getString("key");
-        dataset_name = args.getString("name");
-        dataset_obj = args.getString("obj");
-        dataset_mtl = args.getString("mtl");
-        dataset_xml = args.getString("xml");
-        dataset_folder = args.getString("folder");
-        dataset_scale = args.getFloat("scale");
-        dataset_markers = (ArrayList<Marker>) args.getSerializable("markers");
-
-        // Configure Vuforia to use OpenGL ES 2.0
-        mVuforiaFlags = INIT_FLAGS.GL_20;
-
-        // Update the application status to start initializing application:
-        updateApplicationStatus(APPSTATUS_INIT_APP);
-
-        mIsDroidDevice = android.os.Build.MODEL.toLowerCase().startsWith(
-            "droid");
-*/
-    }
 
     /** Native tracker initialization and deinitialization. */
     public native int initTracker(AssetManager c, String pathToInternalDir,
                                   String obj,String mtl,String xml,String folder,float scale, int markerNum,
-                                  String[] markerNames,float[] markerRot,float[] markerTra, float[] markerSca);
+                                  String[] markerNames,float[] markerRot,float[] markerTra, float[] markerSca,boolean mvo);
 
     public native void deinitTracker();
     /** Native functions to load and destroy tracking data. */
@@ -403,38 +379,6 @@ public class ImageTargets
     /** Native method for starting / stopping off target tracking */
     private native boolean startExtendedTracking();
     private native boolean stopExtendedTracking();
-
-    /** Called when the activity will start interacting with the user. */
-    protected void onResume()
-    {
-        /*DebugLog.LOGD("onResume");
-        super.onResume();
-
-        // This is needed for some Droid devices to force portrait
-        if (mIsDroidDevice)
-        {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        }
-
-        // Vuforia-specific resume operation
-        Vuforia.onResume();
-
-        // We may start the camera only if the Vuforia SDK has already been
-        // initialized
-        if (mAppStatus == APPSTATUS_CAMERA_STOPPED)
-        {
-            updateApplicationStatus(APPSTATUS_CAMERA_RUNNING);
-        }
-
-        // Resume the GL view:
-        if (mGlView != null)
-        {
-            mGlView.setVisibility(View.VISIBLE);
-            mGlView.onResume();
-        }*/
-
-    }
 
     /** Called when the activity will start interacting with the user. */
     public void resume()
@@ -626,7 +570,7 @@ public class ImageTargets
 
                 if (initTracker(activity.getAssets(),activity.getFilesDir().getAbsolutePath(),
                         dataset_obj,dataset_mtl,dataset_xml,dataset_folder,dataset_scale,markersNum,
-                        markerNames,markerRot,markerTra,markerSca) > 0)
+                        markerNames,markerRot,markerTra,markerSca,mvo) > 0)
                 {
                     // Proceed to next application initialization status:
                     updateApplicationStatus(APPSTATUS_INIT_APP_AR);
@@ -756,7 +700,7 @@ public class ImageTargets
         int stencilSize = 0;
         boolean translucent = Vuforia.requiresAlpha();
 
-        mGlView = new VuforiaSampleGLView(activity);
+        mGlView =  new VuforiaSampleGLView(activity);
 
 
         mGlView.init(translucent, depthSize, stencilSize);

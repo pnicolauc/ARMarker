@@ -87,14 +87,15 @@ public class MenuActivity extends AppCompatActivity {
                     case 1:
                         Intent i2 = new Intent(MenuActivity.this,
                                 VOModule.class);
+                        i2.putExtra("fl",getIntent().getFloatExtra("fl",0.0f));
                         startActivity(i2);
                         finish();
                         break;
                     case 2:
                         Bundle bund=setBundle(pos);
-
                         Intent mavoar = new Intent(MenuActivity.this,
                                 MAVOAR.class);
+                        mavoar.putExtras(bund);
                         startActivity(mavoar);
                         finish();
                         break;

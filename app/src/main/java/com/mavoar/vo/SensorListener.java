@@ -22,13 +22,13 @@ public class SensorListener implements SensorEventListener {
 	private final float N2S=1000000000f;
 
 	//Camera Pos/Att
-	private float[] Pos={0,0,0};
+	private static float[] Pos={0,0,0};
 	private float[] Vel={0,0,0};
 	
 	private float[] Cal={0,0,0};
 
 	//Rotation
-	private float[] Rot={0,0,0};
+	private static float[] Rot={0,0,0};
 	
 	int calibration = 1;
 	
@@ -59,7 +59,7 @@ public class SensorListener implements SensorEventListener {
     	//Do nothing
     }
     
-    public double getScale(){
+    public static double getScale(){
     	double scale= /*Math.abs(*/Math.sqrt( Math.pow(Pos[0],2) + Math.pow(Pos[1],2) + Math.pow(Pos[2],2) )/*)*/;
 
 		Pos[0] =0;
@@ -69,7 +69,7 @@ public class SensorListener implements SensorEventListener {
     	return scale;
     }
 
-	public float[] getRot(){
+	public static float[] getRot(){
 		return Rot;
 	}
     
@@ -163,7 +163,7 @@ public class SensorListener implements SensorEventListener {
     				samplesAcc[2]=0;
     				samples=1;
     				deltaTime=0;
-    			}
+				}
     		//}    		   		
     	}
     	else{
@@ -183,7 +183,12 @@ public class SensorListener implements SensorEventListener {
 		} 
     	return output; 
 	}
-	  
+
+	private native void scale(double scale);
+	private native void rotationVector(float[] rot);
+
+
+
 }
     
 

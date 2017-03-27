@@ -94,7 +94,6 @@ Vuforia::Matrix44F markerMatrix;
 SampleAppRenderer* sampleAppRenderer = 0;
 
 bool switchDataSetAsap           = false;
-bool isExtendedTrackingActivated = false;
 
 Vuforia::CameraDevice::CAMERA_DIRECTION currentCamera;
 
@@ -131,6 +130,12 @@ jdouble scale;
 float* rotation;
 
 Vuforia::Matrix44F modelViewMatrix;
+
+
+bool useDeviceTracker=true;
+bool useExtendedTracking=false;
+
+Vuforia::Matrix44F conv;
 
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
@@ -175,7 +180,7 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
             objectTracker->activateDataSet(dataSet);
 
 
-            if(isExtendedTrackingActivated)
+            if(useExtendedTracking)
             {
                 Vuforia::DataSet* currentDataSet = objectTracker->getActiveDataSet(0);
                 for (int tIdx = 0; tIdx < currentDataSet->getNumTrackables(); tIdx++)
@@ -214,6 +219,9 @@ JNIEnv *env, jobject instance,jobject assetManager,jstring pathToInternalDir,
 jstring obj,jstring mtl,jstring xml,jstring folder,jfloat scale, jint markerNum,
  jobjectArray markerNames,jfloatArray markerRot,jfloatArray markerTra, jfloatArray markerSca,jboolean jmvo)
 {
+
+    SampleUtils::setRotationMatrix(90,1,0,0,conv.data);
+
     LOG("Java_com_mavoar_markers_ImageTargets_initTracker");
     mvo = jmvo;
 
@@ -411,6 +419,8 @@ Java_com_mavoar_renderer_GLRenderer_renderFrame(JNIEnv *env, jobject, jdouble sc
 // This method will be called from SampleAppRenderer per each rendering primitives view
 void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& projectionMatrix)
 {
+
+    bool hasMarker=false;
     // Explicitly render the Video Background
     sampleAppRenderer->renderVideoBackground();
     glEnable(GL_DEPTH_TEST);
@@ -448,9 +458,10 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             SampleUtils::printMatrix44(&modelViewMatrix.data[0]);
 
             // base device matrix that can be used for rendering (will need to be inverted), debug
-            deviceMatrix = modelViewMatrix;//SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(modelViewMatrix));
+            deviceMatrix = SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(modelViewMatrix));
 
         } else {
+            hasMarker=true;
             if (strcmp(trackable.getName(), currMarker->name) != 0) {
 
                 LOG("New marker %s", trackable.getName());
@@ -467,10 +478,21 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
     Vuforia::Matrix44F joinedmv;
 
-    if(deviceMatrix.data[0] && markerMatrix.data[0] ){
+
+
+        if(deviceMatrix.data[0] && markerMatrix.data[0] && useDeviceTracker && !hasMarker){
+
+            SampleUtils::multiplyMatrix(conv.data,deviceMatrix.data,deviceMatrix.data);
+            LOG("conversion matrix");
+            SampleUtils::printMatrix(conv.data);
+
             SampleUtils::multiplyMatrix(&deviceMatrix.data[0],
                                     &markerMatrix.data[0] ,
-                                    &joinedmv.data[0]);
+                                   &joinedmv.data[0]);
+            //joinedmv=deviceMatrix;
+        } else if(hasMarker){
+            joinedmv=markerMatrix;
+
         }
 
         SampleUtils::translatePoseMatrix(currMarker->translation[0],
@@ -614,7 +636,7 @@ Java_com_mavoar_markers_ImageTargets_deinitApplicationNative(
 {
     LOG("Java_com_mavoar_markers_ImageTargets_deinitApplicationNative");
 
-    isExtendedTrackingActivated = false;
+    useExtendedTracking = false;
 
     delete sampleAppRenderer;
     sampleAppRenderer = NULL;
@@ -659,8 +681,12 @@ Java_com_mavoar_markers_ImageTargets_startCamera(JNIEnv *,
     // Start the tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     Vuforia::Tracker* objectTracker = trackerManager.getTracker(Vuforia::ObjectTracker::getClassType());
-    if(objectTracker != 0)
+    if(objectTracker != 0) {
         objectTracker->start();
+
+        objectTracker->start();
+
+    }
 }
 
 
@@ -753,7 +779,13 @@ Java_com_mavoar_markers_ImageTargets_startExtendedTracking(JNIEnv*, jobject)
             return JNI_FALSE;
     }
 
-    isExtendedTrackingActivated = true;
+    useExtendedTracking = true;
+    //trackerManager = Vuforia::TrackerManager::getInstance();
+    //objectTracker = trackerManager.getTracker(Vuforia::ObjectTracker::getClassType());
+
+
+    objectTracker->persistExtendedTracking(true);
+
     return JNI_TRUE;
 }
 
@@ -776,7 +808,7 @@ Java_com_mavoar_markers_ImageTargets_stopExtendedTracking(JNIEnv*, jobject)
             return JNI_FALSE;
     }
 
-    isExtendedTrackingActivated = false;
+    useExtendedTracking = false;
     return JNI_TRUE;
 }
 

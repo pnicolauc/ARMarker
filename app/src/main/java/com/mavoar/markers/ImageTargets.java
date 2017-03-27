@@ -575,6 +575,8 @@ public class ImageTargets
                     // Proceed to next application initialization status:
                     updateApplicationStatus(APPSTATUS_INIT_APP_AR);
                 }
+
+
                 break;
 
             case APPSTATUS_INIT_APP_AR:
@@ -600,6 +602,9 @@ public class ImageTargets
                 {
                     DebugLog.LOGE("Loading tracking data set failed");
                 }
+
+
+
                 break;
 
             case APPSTATUS_INITED:
@@ -657,6 +662,8 @@ public class ImageTargets
                 layoutParams.height=(int)(layoutParams.height*ratio);*/
                 //mGlView.setLayoutParams(layoutParams);
 
+                boolean res =startExtendedTracking();
+                DebugLog.LOGE("extended tracking: "+res);
                 break;
 
             default:

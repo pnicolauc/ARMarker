@@ -136,6 +136,7 @@ bool useDeviceTracker=true;
 bool useExtendedTracking=false;
 
 Vuforia::Matrix44F conv;
+Vuforia::Matrix44F aux;
 
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
@@ -220,7 +221,9 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat scale, jint markerNum,
  jobjectArray markerNames,jfloatArray markerRot,jfloatArray markerTra, jfloatArray markerSca,jboolean jmvo)
 {
 
-    SampleUtils::setRotationMatrix(90,1,0,0,conv.data);
+    SampleUtils::setRotationMatrix(-90,0,0,1,conv.data);
+
+    SampleUtils::setRotationMatrix(180,0,1,0,aux.data);
 
     LOG("Java_com_mavoar_markers_ImageTargets_initTracker");
     mvo = jmvo;
@@ -303,6 +306,12 @@ Java_com_mavoar_markers_ImageTargets_deinitTracker(JNIEnv *, jobject)
     // Deinit the object tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     trackerManager.deinitTracker(Vuforia::ObjectTracker::getClassType());
+}
+
+void printMatrix(const float* mat)
+{
+    for(int r=0; r<4; r++,mat+=4)
+        LOG("%7.3f %7.3f %7.3f %7.3f", mat[0], mat[1], mat[2], mat[3]);
 }
 
 
@@ -453,19 +462,15 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         if (result->isOfType(Vuforia::DeviceTrackableResult::getClassType())) {
             const Vuforia::DeviceTrackableResult *deviceTrackableResult =
                     static_cast<const Vuforia::DeviceTrackableResult *>(result);
-
-            LOG("Rotation device tracker");
-            SampleUtils::printMatrix44(&modelViewMatrix.data[0]);
-
             // base device matrix that can be used for rendering (will need to be inverted), debug
-            deviceMatrix = SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(modelViewMatrix));
+            deviceMatrix = SampleMath::Matrix44FInverse(modelViewMatrix);
+            deviceMatrix = SampleMath::Matrix44FTranspose(deviceMatrix);
 
         } else {
             hasMarker=true;
             if (strcmp(trackable.getName(), currMarker->name) != 0) {
 
                 LOG("New marker %s", trackable.getName());
-                SampleUtils::printMatrix44(&modelViewMatrix.data[0]);
 
                 currMarker = markers[trackable.getName()];
             }
@@ -478,19 +483,25 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
     Vuforia::Matrix44F joinedmv;
 
-
-
         if(deviceMatrix.data[0] && markerMatrix.data[0] && useDeviceTracker && !hasMarker){
 
             SampleUtils::multiplyMatrix(conv.data,deviceMatrix.data,deviceMatrix.data);
-            LOG("conversion matrix");
-            SampleUtils::printMatrix(conv.data);
+
+
+            SampleUtils::multiplyMatrix(aux.data,deviceMatrix.data,deviceMatrix.data);
+
+            //LOG("conversion matrix");
+            //SampleUtils::printMatrix(conv.data);
 
             SampleUtils::multiplyMatrix(&deviceMatrix.data[0],
                                     &markerMatrix.data[0] ,
                                    &joinedmv.data[0]);
+
+
             //joinedmv=deviceMatrix;
         } else if(hasMarker){
+            //SampleUtils::printMatrix(markerMatrix.data);
+
             joinedmv=markerMatrix;
 
         }

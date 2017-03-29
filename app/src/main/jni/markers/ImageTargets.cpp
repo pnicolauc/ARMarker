@@ -530,28 +530,20 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
         }
 
+        if(!hasMarker){
+            joinedmv=markerMatrix;
+
+            SampleUtils::multiplyMatrix(&conv.data[0],
+                                        &sensorRotation.data[0] ,
+                                        &sensorRotation.data[0]);
+            SampleUtils::multiplyMatrix(&aux.data[0],
+                                        &sensorRotation.data[0] ,
+                                        &sensorRotation.data[0]);
+            SampleUtils::multiplyMatrix(&sensorRotation.data[0],
+                                        &joinedmv.data[0] ,
+                                        &joinedmv.data[0]);
         
-        //joinedmv=markerMatrix;
-
-       // SampleUtils::setRotationMatrix(180,0,0,1,sensorRotation.data);
-
-       /* SampleUtils::printMatrix(sensorRotation.data);
-        SampleUtils::multiplyMatrix(&sensorRotation.data[0],
-                                    &joinedmv.data[0] ,
-                                    &joinedmv.data[0]);*/
-
-
-        SampleUtils::setRotationMatrix(-90,0,0,1,conv.data);
-        SampleUtils::multiplyMatrix(&conv.data[0],
-                                    &sensorRotation.data[0] ,
-                                    &sensorRotation.data[0]);
-
-        SampleUtils::setRotationMatrix(180,0,1,0,conv.data);
-        SampleUtils::multiplyMatrix(&conv.data[0],
-                                    &sensorRotation.data[0] ,
-                                    &sensorRotation.data[0]);
-
-        joinedmv= sensorRotation;
+        }
 
         SampleUtils::translatePoseMatrix(currMarker->translation[0],
                                        currMarker->translation[1],

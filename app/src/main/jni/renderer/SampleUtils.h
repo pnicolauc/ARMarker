@@ -37,6 +37,11 @@ public:
     static void translatePoseMatrix(float x, float y, float z,
         float* nMatrix = NULL);
     
+    static void
+    setRotation33to44(float x1,float x2,float x3,
+                                float y1,float y2,float y3,
+                                float z1,float z2,float z3,
+                                float* mat);
     /// Applies a rotation.
     static void rotatePoseMatrix(float angle, float x, float y, float z, 
         float* nMatrix = NULL);

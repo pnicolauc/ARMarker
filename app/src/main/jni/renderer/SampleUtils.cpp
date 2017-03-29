@@ -21,6 +21,25 @@ SampleUtils::printMatrix(const float* mat)
         LOG("%7.3f %7.3f %7.3f %7.3f", mat[0], mat[1], mat[2], mat[3]);
 }
 
+void
+SampleUtils::setRotation33to44(float x1,float x2,float x3,
+                                float y1,float y2,float y3,
+                                float z1,float z2,float z3,
+                                float* mat)
+{
+    mat[0]=x1;
+    mat[1]=x2;
+    mat[2]=x3;
+
+    mat[4]=y1;
+    mat[5]=y2;
+    mat[6]=y3;
+
+    mat[8]=z1;
+    mat[9]=z2;
+    mat[10]=z3;   
+}
+
 
 void
 SampleUtils::checkGlError(const char* operation)

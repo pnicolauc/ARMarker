@@ -662,8 +662,8 @@ public class ImageTargets
                 layoutParams.height=(int)(layoutParams.height*ratio);*/
                 //mGlView.setLayoutParams(layoutParams);
 
-                //boolean res =startExtendedTracking();
-                //DebugLog.LOGE("extended tracking: "+res);
+                boolean res =startExtendedTracking();
+                DebugLog.LOGE("extended tracking: "+res);
                 break;
 
             default:

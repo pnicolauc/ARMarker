@@ -127,16 +127,19 @@ bool init = false;
 
 
 jdouble scale;
-float* rotation;
+float rotation[3];
 
 Vuforia::Matrix44F modelViewMatrix;
 
 
-bool useDeviceTracker=true;
+bool useDeviceTracker=false;
 bool useExtendedTracking=false;
 
 Vuforia::Matrix44F conv;
 Vuforia::Matrix44F aux;
+
+Vuforia::Matrix44F sensorRotation;
+
 
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
@@ -220,6 +223,14 @@ JNIEnv *env, jobject instance,jobject assetManager,jstring pathToInternalDir,
 jstring obj,jstring mtl,jstring xml,jstring folder,jfloat scale, jint markerNum,
  jobjectArray markerNames,jfloatArray markerRot,jfloatArray markerTra, jfloatArray markerSca,jboolean jmvo)
 {
+
+    sensorRotation.data[3]=0;
+    sensorRotation.data[7]=0;
+    sensorRotation.data[11]=0;
+    sensorRotation.data[12]=0;
+    sensorRotation.data[13]=0;
+    sensorRotation.data[14]=0;
+    sensorRotation.data[15]=1;
 
     SampleUtils::setRotationMatrix(-90,0,0,1,conv.data);
 
@@ -308,11 +319,7 @@ Java_com_mavoar_markers_ImageTargets_deinitTracker(JNIEnv *, jobject)
     trackerManager.deinitTracker(Vuforia::ObjectTracker::getClassType());
 }
 
-void printMatrix(const float* mat)
-{
-    for(int r=0; r<4; r++,mat+=4)
-        LOG("%7.3f %7.3f %7.3f %7.3f", mat[0], mat[1], mat[2], mat[3]);
-}
+
 
 
 JNIEXPORT int JNICALL
@@ -415,14 +422,24 @@ Java_com_mavoar_markers_ImageTargets_onVuforiaInitializedNative(JNIEnv *, jobjec
 
 
 JNIEXPORT void JNICALL
-Java_com_mavoar_renderer_GLRenderer_renderFrame(JNIEnv *env, jobject, jdouble sc, jfloatArray r)
+Java_com_mavoar_renderer_GLRenderer_renderFrame(JNIEnv *env, jobject, jdouble sc, jfloat xx,jfloat yy,jfloat zz,
+jfloat x1,jfloat x2,jfloat x3,
+jfloat y1,jfloat y2,jfloat y3,
+jfloat z1,jfloat z2,jfloat z3)
 {
+    
     scale = sc;
-    rotation = (float*)env->GetFloatArrayElements( r,0);
+    
+    SampleUtils::setRotation33to44(x1,x2,x3,y1,y2,y3,z1,z2,z3,sensorRotation.data);
+    sensorRotation = SampleMath::Matrix44FInverse(sensorRotation);
+    //sensorRotation = SampleMath::Matrix44FTranspose(sensorRotation);
+
     // Call renderFrame from SampleAppRenderer which will loop through the rendering primitives
     // views and then it will call renderFrameForView per each of the views available,
     // in this case there is only one view since it is not rendering in stereo mode
-    sampleAppRenderer->renderFrame();
+    sampleAppRenderer->renderFrame(
+
+    );
 }
 
 // This method will be called from SampleAppRenderer per each rendering primitives view
@@ -463,8 +480,9 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             const Vuforia::DeviceTrackableResult *deviceTrackableResult =
                     static_cast<const Vuforia::DeviceTrackableResult *>(result);
             // base device matrix that can be used for rendering (will need to be inverted), debug
+            //deviceMatrix = modelViewMatrix;
             deviceMatrix = SampleMath::Matrix44FInverse(modelViewMatrix);
-            deviceMatrix = SampleMath::Matrix44FTranspose(deviceMatrix);
+            //deviceMatrix = SampleMath::Matrix44FTranspose(modelViewMatrix);
 
         } else {
             hasMarker=true;
@@ -486,10 +504,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         if(deviceMatrix.data[0] && markerMatrix.data[0] && useDeviceTracker && !hasMarker){
 
             SampleUtils::multiplyMatrix(conv.data,deviceMatrix.data,deviceMatrix.data);
-
-
             SampleUtils::multiplyMatrix(aux.data,deviceMatrix.data,deviceMatrix.data);
-
             //LOG("conversion matrix");
             //SampleUtils::printMatrix(conv.data);
 
@@ -498,13 +513,45 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                    &joinedmv.data[0]);
 
 
+
             //joinedmv=deviceMatrix;
         } else if(hasMarker){
             //SampleUtils::printMatrix(markerMatrix.data);
+            SampleUtils::multiplyMatrix(conv.data,deviceMatrix.data,deviceMatrix.data);
+            SampleUtils::multiplyMatrix(aux.data,deviceMatrix.data,deviceMatrix.data);
+            //LOG("conversion matrix");
+            //SampleUtils::printMatrix(deviceMatrix.data);
+
+            SampleUtils::multiplyMatrix(&deviceMatrix.data[0],
+                                        &markerMatrix.data[0] ,
+                                        &joinedmv.data[0]);
 
             joinedmv=markerMatrix;
 
         }
+
+        
+        //joinedmv=markerMatrix;
+
+       // SampleUtils::setRotationMatrix(180,0,0,1,sensorRotation.data);
+
+       /* SampleUtils::printMatrix(sensorRotation.data);
+        SampleUtils::multiplyMatrix(&sensorRotation.data[0],
+                                    &joinedmv.data[0] ,
+                                    &joinedmv.data[0]);*/
+
+
+        SampleUtils::setRotationMatrix(-90,0,0,1,conv.data);
+        SampleUtils::multiplyMatrix(&conv.data[0],
+                                    &sensorRotation.data[0] ,
+                                    &sensorRotation.data[0]);
+
+        SampleUtils::setRotationMatrix(180,0,1,0,conv.data);
+        SampleUtils::multiplyMatrix(&conv.data[0],
+                                    &sensorRotation.data[0] ,
+                                    &sensorRotation.data[0]);
+
+        joinedmv= sensorRotation;
 
         SampleUtils::translatePoseMatrix(currMarker->translation[0],
                                        currMarker->translation[1],
@@ -522,7 +569,8 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                     kObjectScale,
                                     kObjectScale,
                                     &joinedmv.data[0]);
-
+    
+        
         SampleUtils::multiplyMatrix(&projectionMatrix.data[0],
                                     &joinedmv.data[0] ,
                                     &modelViewProjection.data[0]);

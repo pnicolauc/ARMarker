@@ -3,6 +3,7 @@ package com.mavoar.activities;
 import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import com.mavoar.vo.SensorListener;
 
 import com.mavoar.R;
 import com.mavoar.markers.ImageTargets;
@@ -19,12 +20,13 @@ public class MarkerModule extends Activity {
 
     ImageTargets imageTargets;
 
+    private SensorListener msensorListener;
 
     protected void onCreate(Bundle savedInstanceState)
     {
         DebugLog.LOGD("onCreate");
         super.onCreate(savedInstanceState);
-
+        msensorListener = new SensorListener(this);
         imageTargets = new ImageTargets(getIntent().getExtras(),MarkerModule.this,0.5,false);
     }
 

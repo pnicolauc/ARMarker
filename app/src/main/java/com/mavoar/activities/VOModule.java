@@ -98,6 +98,7 @@ public class VOModule extends Activity implements CameraBridgeViewBase.CvCameraV
         Mat matGray = inputFrame.gray();
         double scale=getScalefromSensorListener();
         float[] rot=msensorListener.getRot();
+        float[] rotmat=msensorListener.getRotMat();
 
         Imgproc.resize( matGray, matGray, downscaled );
         String message=processFrame(matGray.getNativeObjAddr(),scale,rot);
@@ -123,6 +124,7 @@ public class VOModule extends Activity implements CameraBridgeViewBase.CvCameraV
                 1,                               // front scale
                 new Scalar(255, 0, 0),             // Scalar object for color
                 4 );
+        
 
         return rgb;
     }

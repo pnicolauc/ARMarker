@@ -5,12 +5,14 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.util.Log;
 
 public class SensorListener implements SensorEventListener {
 	//Most recent sensor data and its timestamp
 	
 	static final float ALPHA = 0.25f; // if ALPHA = 1 OR 0, no filter applies.
-	
+
+	String Tag= "SensorMAVOAR";	
 	float[] dAcc=new float[3];	
 	float[] finalAcc=new float[3];
 	float[] samplesAcc={0,0,0};	
@@ -29,7 +31,8 @@ public class SensorListener implements SensorEventListener {
 
 	//Rotation
 	private static float[] Rot={0,0,0};
-	
+	private static float[] rotationMatrix = new float[9];
+
 	int calibration = 1;
 	
 	int samples=1;
@@ -59,7 +62,7 @@ public class SensorListener implements SensorEventListener {
     	//Do nothing
     }
     
-    public static double getScale(){
+    public static synchronized double getScale(){
     	double scale= /*Math.abs(*/Math.sqrt( Math.pow(Pos[0],2) + Math.pow(Pos[1],2) + Math.pow(Pos[2],2) )/*)*/;
 
 		Pos[0] =0;
@@ -69,8 +72,12 @@ public class SensorListener implements SensorEventListener {
     	return scale;
     }
 
-	public static float[] getRot(){
+	public static synchronized float[] getRot(){
 		return Rot;
+	}
+
+	public static synchronized float[] getRotMat(){
+		return rotationMatrix;
 	}
     
     public double getScaleUnfilteredAcc(){
@@ -170,7 +177,10 @@ public class SensorListener implements SensorEventListener {
 			Rot[0]=event.values[0];
 			Rot[1]=event.values[1];
 			Rot[2]=event.values[2];
+
+			mSMan.getRotationMatrixFromVector(rotationMatrix,Rot);
 		}
+
     }
     
     protected float[] lowPass( float[] input, float[] output ) { 

@@ -74,7 +74,10 @@ public class GLRenderer implements GLSurfaceView.Renderer
     
 
     /** The native render function. */
-    public native void renderFrame(double scale,float[] rotation);
+    public native void renderFrame(double scale,float x,float y,float z,
+    float x1,float x2,float x3,
+float y1,float y2,float y3,
+float z1,float z2,float z3);
     
     
     /** Called to draw the current frame. */
@@ -87,6 +90,12 @@ public class GLRenderer implements GLSurfaceView.Renderer
         mActivity.updateRenderView();
         
         // Call our native function to render content
-        renderFrame(SensorListener.getScale(),SensorListener.getRot());
+        double scale= SensorListener.getScale();
+        float[] rot= SensorListener.getRot();
+        float[] rotmat = SensorListener.getRotMat();
+
+        renderFrame(scale,rot[0],rot[1],rot[2],rotmat[0],rotmat[1],rotmat[2],
+        rotmat[3],rotmat[4],rotmat[5],
+        rotmat[6],rotmat[7],rotmat[8]);
     }
 }

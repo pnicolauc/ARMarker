@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        is-multidex="false"
+        jar="/home/al/Dropbox/Tese/MAVOAR/openCVLibrary310/build/intermediates/bundles/default/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="f06d476864a3dd2291535a6c89241c69f3201cf9">
+        <dex dex="/home/al/Dropbox/Tese/MAVOAR/app/build/intermediates/pre-dexed/debug/classes_c88891427dceb126a0f178b613ae9876e614142f.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/al/.gradle/caches/modules-2/files-2.1/com.google.code.gson/gson/2.2.4/a60a5e993c98c864010053cb901b7eab25306568/gson-2.2.4.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="a60a5e993c98c864010053cb901b7eab25306568">
+        <dex dex="/home/al/Dropbox/Tese/MAVOAR/app/build/intermediates/pre-dexed/debug/gson-2.2.4_5511834b377df20279da71d32b245e12c4a3c6cd.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/al/Dropbox/Tese/MAVOAR/vuforia-build/java/vuforia/Vuforia.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="15f0c848fc592fc94c41fff712b6079d754ecbe2">
+        <dex dex="/home/al/Dropbox/Tese/MAVOAR/app/build/intermediates/pre-dexed/debug/Vuforia_7b136b6debf5a5cf0197289646d47914a4a8819a.jar" />
+    </item>
+
+</items>

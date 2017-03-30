@@ -511,125 +511,95 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
                 currMarker = markers[trackable.getName()];
             }
-
-
             markerMatrix = modelViewMatrix;
         }
     }
     Vuforia::Matrix44F modelViewProjection;
-
     Vuforia::Matrix44F joinedmv;
-    /*SampleUtils::printMatrix(aux.data);
-    joinedmv=SampleMath::Matrix44FTranspose(aux);
 
-    SampleUtils::printMatrix(joinedmv.data);
-    SampleUtils::multiplyMatrix(aux.data, 
-                SampleMath::Matrix44FInverse(aux).data,conv.data);
-                                SampleUtils::printMatrix(conv.data);*/
+    if(!hasMarker){
+        if(lastMarker){
+            Vuforia::Matrix44F resMatrix;
+            Vuforia::Matrix44F inverseSensor= SampleMath::Matrix44FTranspose(lastMat);
 
-        if(deviceMatrix.data[0] && markerMatrix.data[0] && useDeviceTracker && !hasMarker){
+            SampleUtils::multiplyMatrix(sensorRotation.data, 
+            inverseSensor.data,resMatrix.data);
+            SampleUtils::printMatrix(resMatrix.data);
 
-            SampleUtils::multiplyMatrix(conv.data,deviceMatrix.data,deviceMatrix.data);
-            SampleUtils::multiplyMatrix(aux.data,deviceMatrix.data,deviceMatrix.data);
-            //LOG("conversion matrix");
-            //SampleUtils::printMatrix(conv.data);
-
-            SampleUtils::multiplyMatrix(&deviceMatrix.data[0],
-                                    &markerMatrix.data[0] ,
-                                   &joinedmv.data[0]);
-
-
-
-            //joinedmv=deviceMatrix;
-        } else if(hasMarker){
             joinedmv=markerMatrix;
 
-            lastMat=sensorRotation;
-            lastMarker=hasMarker;
-
+            SampleUtils::multiplyMatrix(&resMatrix.data[0],
+                                        &joinedmv.data[0] ,
+                                        &joinedmv.data[0]);
         }
-
-        if(!hasMarker){
-            if(lastMarker){
-
-                Vuforia::Matrix44F resMatrix;
-                
-
-                Vuforia::Matrix44F inverseSensor= SampleMath::Matrix44FTranspose(lastMat);
-
-                SampleUtils::multiplyMatrix(sensorRotation.data, 
-                inverseSensor.data,resMatrix.data);
-                SampleUtils::printMatrix(resMatrix.data);
-
-                
-                joinedmv=markerMatrix;
-
-                SampleUtils::multiplyMatrix(&resMatrix.data[0],
-                                            &joinedmv.data[0] ,
-                                            &joinedmv.data[0]);
-            }
-            
         
-        }
+    } else if(hasMarker){
+        joinedmv=markerMatrix;
 
-        SampleUtils::translatePoseMatrix(currMarker->translation[0],
-                                       currMarker->translation[1],
-                                        currMarker->translation[2],
-                                         &joinedmv.data[0]);
+        lastMat=sensorRotation;
+        lastMarker=hasMarker;
 
-        SampleUtils::rotatePoseMatrix(currMarker->rotation[0],
-                                        currMarker->rotation[1],
-                                        currMarker->rotation[2] ,
-                                        currMarker->rotation[3],
+    }
+
+
+    SampleUtils::translatePoseMatrix(currMarker->translation[0],
+                                    currMarker->translation[1],
+                                    currMarker->translation[2],
                                         &joinedmv.data[0]);
 
-
-        SampleUtils::scalePoseMatrix(kObjectScale,
-                                    kObjectScale,
-                                    kObjectScale,
+    SampleUtils::rotatePoseMatrix(currMarker->rotation[0],
+                                    currMarker->rotation[1],
+                                    currMarker->rotation[2] ,
+                                    currMarker->rotation[3],
                                     &joinedmv.data[0]);
-    
-        
-        SampleUtils::multiplyMatrix(&projectionMatrix.data[0],
-                                    &joinedmv.data[0] ,
-                                    &modelViewProjection.data[0]);
-
-        glUseProgram(shaderProgramID);
 
 
-        std::vector<MeshInfo*> modelMeshes= gAssimpObject->getMeshes();
-        unsigned int numberOfLoadedMeshes = modelMeshes.size();
-
-        // render all meshes
-         for (unsigned int n = 0; n < numberOfLoadedMeshes; ++n) {
-            if (modelMeshes[n]->mTextureID) {
-                glActiveTexture(GL_TEXTURE0);
-
-                glUniform1i(texSampler2DHandle, 0 );
-
-                glBindTexture( GL_TEXTURE_2D, modelMeshes[n]->mTextureID);
-
-             }
-             glVertexAttribPointer(vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
-                                   (const GLvoid*)  (modelMeshes[n]->vertices));
-             glVertexAttribPointer(textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,
-                                  (const GLvoid*) (modelMeshes[n]->texCoords));
-
-             glEnableVertexAttribArray(vertexHandle);
-             glEnableVertexAttribArray(textureCoordHandle);
-             glUniformMatrix4fv(mvpMatrixHandle, 1, GL_FALSE,
-             (GLfloat*)&modelViewProjection.data[0] );
-
-              glDrawElements(GL_TRIANGLES,  modelMeshes[n]->nIndices, GL_UNSIGNED_SHORT,
-                            (const GLvoid*)(modelMeshes[n]->indices));
+    SampleUtils::scalePoseMatrix(kObjectScale,
+                                kObjectScale,
+                                kObjectScale,
+                                &joinedmv.data[0]);
 
 
-            }
+    SampleUtils::multiplyMatrix(&projectionMatrix.data[0],
+                                &joinedmv.data[0] ,
+                                &modelViewProjection.data[0]);
 
-            SampleUtils::checkGlError("ImageTargets renderFrame");
+    glUseProgram(shaderProgramID);
 
-    //
-    // }
+
+    std::vector<MeshInfo*> modelMeshes= gAssimpObject->getMeshes();
+    unsigned int numberOfLoadedMeshes = modelMeshes.size();
+
+// render all meshes
+    for (unsigned int n = 0; n < numberOfLoadedMeshes; ++n) {
+    if (modelMeshes[n]->mTextureID) {
+        glActiveTexture(GL_TEXTURE0);
+
+        glUniform1i(texSampler2DHandle, 0 );
+
+        glBindTexture( GL_TEXTURE_2D, modelMeshes[n]->mTextureID);
+
+        }
+        glVertexAttribPointer(vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
+                            (const GLvoid*)  (modelMeshes[n]->vertices));
+        glVertexAttribPointer(textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,
+                            (const GLvoid*) (modelMeshes[n]->texCoords));
+
+        glEnableVertexAttribArray(vertexHandle);
+        glEnableVertexAttribArray(textureCoordHandle);
+        glUniformMatrix4fv(mvpMatrixHandle, 1, GL_FALSE,
+        (GLfloat*)&modelViewProjection.data[0] );
+
+        glDrawElements(GL_TRIANGLES,  modelMeshes[n]->nIndices, GL_UNSIGNED_SHORT,
+                    (const GLvoid*)(modelMeshes[n]->indices));
+
+
+    }
+
+    SampleUtils::checkGlError("ImageTargets renderFrame");
+
+//
+// }
 
 
     glDisable(GL_DEPTH_TEST);

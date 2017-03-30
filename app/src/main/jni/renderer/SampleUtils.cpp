@@ -38,6 +38,14 @@ SampleUtils::setRotation33to44(float x1,float x2,float x3,
     mat[8]=z1;
     mat[9]=z2;
     mat[10]=z3;   
+
+    mat[3]=0;
+    mat[7]=0;
+    mat[11]=0;
+    mat[12]=0;
+    mat[13]=0;
+    mat[14]=0;
+    mat[15]=1;
 }
 
 

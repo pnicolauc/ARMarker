@@ -141,6 +141,10 @@ Vuforia::Matrix44F aux;
 Vuforia::Matrix44F sensorRotation;
 
 
+bool lastMarker=false;
+Vuforia::Matrix44F lastMat;
+
+
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
 {
@@ -431,8 +435,23 @@ jfloat z1,jfloat z2,jfloat z3)
     scale = sc;
     
     SampleUtils::setRotation33to44(x1,x2,x3,y1,y2,y3,z1,z2,z3,sensorRotation.data);
-    sensorRotation = SampleMath::Matrix44FInverse(sensorRotation);
+    //sensorRotation = SampleMath::Matrix44FInverse(sensorRotation);
+
+    SampleUtils::multiplyMatrix(&conv.data[0],
+                                    &sensorRotation.data[0] ,
+                                    &sensorRotation.data[0]);
+    SampleUtils::multiplyMatrix(&aux.data[0],
+                                            &sensorRotation.data[0] ,
+                                            &sensorRotation.data[0]);
     //sensorRotation = SampleMath::Matrix44FTranspose(sensorRotation);
+    //SampleUtils::printMatrix(sensorRotation.data);
+
+    /*SampleUtils::multiplyMatrix(conv.data,sensorRotation.data,&sensorRotation.data[0]);
+    SampleUtils::multiplyMatrix(aux.data,sensorRotation.data,&sensorRotation.data[0]);*/
+
+    //SampleUtils::printMatrix(sensorRotation.data);
+
+    //SampleUtils::multiplyMatrix(aux.data,sensorRotation.data,&sensorRotation.data[0]);
 
     // Call renderFrame from SampleAppRenderer which will loop through the rendering primitives
     // views and then it will call renderFrameForView per each of the views available,
@@ -500,6 +519,13 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     Vuforia::Matrix44F modelViewProjection;
 
     Vuforia::Matrix44F joinedmv;
+    /*SampleUtils::printMatrix(aux.data);
+    joinedmv=SampleMath::Matrix44FTranspose(aux);
+
+    SampleUtils::printMatrix(joinedmv.data);
+    SampleUtils::multiplyMatrix(aux.data, 
+                SampleMath::Matrix44FInverse(aux).data,conv.data);
+                                SampleUtils::printMatrix(conv.data);*/
 
         if(deviceMatrix.data[0] && markerMatrix.data[0] && useDeviceTracker && !hasMarker){
 
@@ -516,32 +542,33 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
             //joinedmv=deviceMatrix;
         } else if(hasMarker){
-            //SampleUtils::printMatrix(markerMatrix.data);
-            SampleUtils::multiplyMatrix(conv.data,deviceMatrix.data,deviceMatrix.data);
-            SampleUtils::multiplyMatrix(aux.data,deviceMatrix.data,deviceMatrix.data);
-            //LOG("conversion matrix");
-            //SampleUtils::printMatrix(deviceMatrix.data);
-
-            SampleUtils::multiplyMatrix(&deviceMatrix.data[0],
-                                        &markerMatrix.data[0] ,
-                                        &joinedmv.data[0]);
-
             joinedmv=markerMatrix;
+
+            lastMat=sensorRotation;
+            lastMarker=hasMarker;
 
         }
 
         if(!hasMarker){
-            joinedmv=markerMatrix;
+            if(lastMarker){
 
-            SampleUtils::multiplyMatrix(&conv.data[0],
-                                        &sensorRotation.data[0] ,
-                                        &sensorRotation.data[0]);
-            SampleUtils::multiplyMatrix(&aux.data[0],
-                                        &sensorRotation.data[0] ,
-                                        &sensorRotation.data[0]);
-            SampleUtils::multiplyMatrix(&sensorRotation.data[0],
-                                        &joinedmv.data[0] ,
-                                        &joinedmv.data[0]);
+                Vuforia::Matrix44F resMatrix;
+                
+
+                Vuforia::Matrix44F inverseSensor= SampleMath::Matrix44FTranspose(lastMat);
+
+                SampleUtils::multiplyMatrix(sensorRotation.data, 
+                inverseSensor.data,resMatrix.data);
+                SampleUtils::printMatrix(resMatrix.data);
+
+                
+                joinedmv=markerMatrix;
+
+                SampleUtils::multiplyMatrix(&resMatrix.data[0],
+                                            &joinedmv.data[0] ,
+                                            &joinedmv.data[0]);
+            }
+            
         
         }
 
@@ -606,6 +633,8 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
 
     glDisable(GL_DEPTH_TEST);
+    
+    
 }
 
 

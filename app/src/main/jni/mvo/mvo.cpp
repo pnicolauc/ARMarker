@@ -16,7 +16,10 @@ struct Frames frames;
 struct Camera camera;
 struct Matrices matrices;
 struct Sensors sensors;
+
+
 jstring returnString;
+float* tot_t=new float[3];
 
 JNIEnv *envgl;
 
@@ -26,6 +29,11 @@ void mvoInit(float focalLength,float ppx,float ppy){
     camera.focal = (float) focalLength;
     camera.pp.x= (float) ppx;
     camera.pp.y= (float) ppy;
+
+
+    tot_t[0]=0.0f;
+    tot_t[1]=0.0f;
+    tot_t[2]=0.0f;
 }
 extern "C"
 JNIEXPORT void JNICALL
@@ -134,10 +142,11 @@ jstring returnMessage(JNIEnv *env,char str[]){
 }
 
 
-void mvo_processFrame(jlong matAddrGray,
+float* mvo_processFrame(jlong matAddrGray,
         jdouble scale,
 float* rotation) {
 LOGD("Received Frame");
+
 
 sensors.scale= (double)scale;
 sensors.rotation= rotation;
@@ -166,11 +175,14 @@ sensors.rotation= rotation;
         if(envgl)
             returnString = returnMessage(envgl,"Tracking");
 
-
+        tot_t[0]=(float)matrices.total_translation.at<double>(0)/100.0f;
+        tot_t[1]=(float)matrices.total_translation.at<double>(1)/100.0f;
+        tot_t[2]=(float)matrices.total_translation.at<double>(2)/100.0f;
         break;
     }
     LOGD("Received Frame");
 
+    return tot_t;
 }
 
 

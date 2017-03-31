@@ -465,6 +465,11 @@ jfloat z1,jfloat z2,jfloat z3)
 void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& projectionMatrix)
 {
 
+    float* mvoTranslation=new float[3];
+    mvoTranslation[0]=0.0f;
+    mvoTranslation[1]=0.0f;
+    mvoTranslation[2]=0.0f;
+
     bool hasMarker=false;
     // Explicitly render the Video Background
     sampleAppRenderer->renderVideoBackground();
@@ -485,7 +490,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
     // Did we find any trackables this frame?
     if(state->getNumTrackableResults() <=1 && mvo && init){
-        mvo_processFrame((long)&curr_frame,scale,rotation);
+        mvoTranslation=mvo_processFrame((long)&curr_frame,scale,rotation);
     }
 
     for(int tIdx = 0; tIdx < state->getNumTrackableResults(); tIdx++) {
@@ -540,6 +545,14 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         lastMarker=hasMarker;
 
     }
+
+    if(mvo && init){
+        SampleUtils::translatePoseMatrix(mvoTranslation[0],
+                                         mvoTranslation[1],
+                                         mvoTranslation[2],
+                                            &joinedmv.data[0]);
+    }
+    
 
 
     SampleUtils::translatePoseMatrix(currMarker->translation[0],

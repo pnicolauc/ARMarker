@@ -22,7 +22,7 @@ enum Stage { WAITING_FIRST_FRAME, WAITING_SECOND_FRAME, WAITING_FRAME };
 
 
 void mvoInit(float focalLength,float ppx,float ppy);
-void mvo_processFrame(jlong matAddrGray,
+float* mvo_processFrame(jlong matAddrGray,
                       jdouble scale,
                       float* rotation);
 

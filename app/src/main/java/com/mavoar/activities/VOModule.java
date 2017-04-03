@@ -19,6 +19,9 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 /**
  * Created by al on 22-03-2017.
  */
@@ -35,6 +38,9 @@ public class VOModule extends Activity implements CameraBridgeViewBase.CvCameraV
     private Size upscaled;
     private SensorListener msensorListener;
     double scale=0.0;
+
+
+    ArrayList<Point> trajectory;
 
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -76,6 +82,7 @@ public class VOModule extends Activity implements CameraBridgeViewBase.CvCameraV
         Log.i(TAG, "focal length: "+ fl);
 
 
+        trajectory = new ArrayList<>();
         msensorListener = new SensorListener(this);
 
         mOpenCvCameraView = new JavaCameraView(this, -1);
@@ -101,13 +108,47 @@ public class VOModule extends Activity implements CameraBridgeViewBase.CvCameraV
         float[] rotmat=msensorListener.getRotMat();
 
         Imgproc.resize( matGray, matGray, downscaled );
-        String message=processFrame(matGray.getNativeObjAddr(),scale,rot);
+        String message=processFrame(matGray.getNativeObjAddr(),scale,rotmat);
         Imgproc.resize( matGray, matGray, upscaled );
 
 
         Mat rgb= inputFrame.rgba();
 
+        Matcher m = Pattern.compile("-?\\d+\\.\\d+").matcher(message);
+        ArrayList<Float> translations= new ArrayList<Float>(); 
+        while (m.find()) 
+        {
+            translations.add(Float.parseFloat(m.group(0)));
+        }
+
+        translations.add(0.0f);
+        translations.add(0.0f);
+
+        float x= translations.get(0);
+        float y= translations.get(1);
+
+        String message2= x+" "+y;
+
+        int xx=(int)(200+(int)(x*20.0f));
+        int yy=((int)(200+y*20.0));
+
+        Point p= new Point(xx,yy);
+
+        trajectory.add(p);
+        for(Point point: trajectory){
+            Imgproc.circle(rgb,point,5,new Scalar(255,0,0),-1);
+        }
+        
+
+
+
         Imgproc.putText(rgb,message,new Point(10, 50),               // point
+                Core.FONT_HERSHEY_SIMPLEX ,      // front face
+                1,                               // front scale
+                new Scalar(255, 0, 0),             // Scalar object for color
+                4 );
+        
+         Imgproc.putText(rgb,message2+"",new Point(10, 250),               // point
                 Core.FONT_HERSHEY_SIMPLEX ,      // front face
                 1,                               // front scale
                 new Scalar(255, 0, 0),             // Scalar object for color

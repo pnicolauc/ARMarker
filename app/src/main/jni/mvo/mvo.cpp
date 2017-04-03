@@ -48,6 +48,22 @@ void setRotationFromSensor(){
     matrices.total_rotation.at<double>(0)= sensors.rotation[0];
     matrices.total_rotation.at<double>(1)= sensors.rotation[1];
     matrices.total_rotation.at<double>(2)= sensors.rotation[2];
+
+    matrices.total_rotation.at<double>(3)= sensors.rotation[3];
+    matrices.total_rotation.at<double>(4)= sensors.rotation[4];
+    matrices.total_rotation.at<double>(5)= sensors.rotation[5];
+
+    matrices.total_rotation.at<double>(6)= sensors.rotation[6];
+    matrices.total_rotation.at<double>(7)= sensors.rotation[7];
+    matrices.total_rotation.at<double>(8)= sensors.rotation[8];
+}
+
+void mvo_reset(){
+    matrices.total_translation.at<double>(0)= 0.0f;
+    matrices.total_translation.at<double>(1)= 0.0f;
+    matrices.total_translation.at<double>(2)= 0.0f;
+
+    stage = WAITING_FIRST_FRAME;
 }
 
 void initialFix(){
@@ -66,13 +82,11 @@ void initialFix(){
                 recoverPose(matrices.essential, points2, points1, matrices.rotation, matrices.translation, camera.focal, camera.pp, matrices.mask);
 
                 frames.prev_features = points2;
-
+                matrices.total_rotation = matrices.rotation.clone();
+                setRotationFromSensor();
 
                 if(matrices.total_translation.size().width ==0){
-                    matrices.total_rotation = matrices.rotation.clone();
-                    setRotationFromSensor();
-
-                    matrices.total_translation = (matrices.translation.clone()* sensors.scale);
+                    matrices.total_translation = sensors.scale * (matrices.total_rotation * matrices.translation.clone());
                 }else{
                     matrices.total_translation = matrices.total_translation + sensors.scale * (matrices.total_rotation * matrices.translation);
                 }
@@ -80,7 +94,7 @@ void initialFix(){
 
                 stage=WAITING_FRAME;
 
-            }
+            } 
         }
 
         if(points2.size()==0 | points1.size()==0){
@@ -107,12 +121,9 @@ void mvoDetectAndTrack(){
                     1.0, matrices.mask);
             recoverPose(matrices.essential, frames.curr_features, frames.prev_features, matrices.rotation, matrices.translation, camera.focal, camera.pp, matrices.mask);
 
-            if ((sensors.scale > 0.05) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))
-                    && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))) {
-
-
+            if ((sensors.scale > 0.1) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))
+                    && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))) {
                 matrices.total_translation = matrices.total_translation + sensors.scale * (matrices.total_rotation * matrices.translation);
-
             }
             frames.prev_features = frames.curr_features;
         }
@@ -175,12 +186,15 @@ sensors.rotation= rotation;
         if(envgl)
             returnString = returnMessage(envgl,"Tracking");
 
-        tot_t[0]=(float)matrices.total_translation.at<double>(0)/100.0f;
-        tot_t[1]=(float)matrices.total_translation.at<double>(1)/100.0f;
-        tot_t[2]=(float)matrices.total_translation.at<double>(2)/100.0f;
+        tot_t[0]=(float)matrices.total_translation.at<double>(0);
+        tot_t[1]=(float)matrices.total_translation.at<double>(1);
+        tot_t[2]=(float)matrices.total_translation.at<double>(2);
         break;
     }
     LOGD("Received Frame");
+
+    LOGD("mvo %f %f %f",tot_t[0],tot_t[1],tot_t[2]);
+
 
     return tot_t;
 }
@@ -198,34 +212,7 @@ Java_com_mavoar_activities_VOModule_processFrame(
     envgl=env;
     mvo_processFrame(matAddrGray, scale,(float*)env->GetFloatArrayElements( rotation,0));
 
-
-    /*jstring returnString;
-    switch(stage){
-        case WAITING_FIRST_FRAME:
-            LOGD("First Frame");
-            stage=WAITING_SECOND_FRAME;
-
-            frames.prev_frame = ((Mat*)matAddrGray)->clone();
-            returnString = env->NewStringUTF("Fixing");
-
-            break;
-        case WAITING_SECOND_FRAME:
-            LOGD("Second Frame");
-            frames.curr_frame = (*(Mat*)matAddrGray);
-            initialFix();
-            returnString = returnMessage(env,"Fixing");
-
-            break;
-        case WAITING_FRAME:
-            LOGD("Normal Frame");
-            frames.prev_frame = frames.curr_frame.clone();
-            frames.curr_frame = *(Mat *) matAddrGray;
-            mvoDetectAndTrack();
-            returnString = returnMessage(env,"Tracking");
-
-            break;
-        }*/
-        return returnString;
+    return returnString;
 }
 
 

@@ -127,7 +127,7 @@ bool init = false;
 
 
 jdouble scale;
-float rotation[3];
+float rotation[9];
 
 Vuforia::Matrix44F modelViewMatrix;
 
@@ -144,6 +144,10 @@ Vuforia::Matrix44F sensorRotation;
 bool lastMarker=false;
 Vuforia::Matrix44F lastMat;
 
+float ratio = 8.0f;
+float ppx;
+float ppy;
+
 
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
@@ -158,13 +162,13 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
             if (image->getFormat() == Vuforia::RGB565) {
                 //LOG("init %d mvo %d",init, mvo);
                 if(!init && mvo){
-                    mvoInit(fl,(float)(image->getHeight()/16.0),(float)(image->getWidth()/16.0));
+                    mvoInit(fl,(float)(image->getHeight()/(ratio*2)),(float)(image->getWidth()/(ratio*2)));
                     init=true;
                 }
+                
                 curr_frame = Mat(image->getHeight(),image->getWidth(),CV_8UC2,(unsigned char *)image->getPixels());
-                resize(curr_frame, curr_frame, Size(image->getHeight()/8, image->getHeight()/8), 0, 0, INTER_CUBIC); // resize to 1024x768 resolution
+                resize(curr_frame, curr_frame, Size(image->getHeight()/ratio, image->getHeight()/ratio), 0, 0, INTER_CUBIC); // resize to 1024x768 resolution
                 cvtColor(curr_frame, curr_frame, CV_BGR5652GRAY);
-
 
                 LOG("Saving frame as Mat. SIZE: %d %d.",image->getHeight(),image->getWidth());
                 //imwrite( "curr_frame.jpg", curr_frame );
@@ -187,7 +191,6 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
             }
             objectTracker->activateDataSet(dataSet);
 
-
             if(useExtendedTracking)
             {
                 Vuforia::DataSet* currentDataSet = objectTracker->getActiveDataSet(0);
@@ -197,9 +200,6 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
                     trackable->startExtendedTracking();
                 }
             }
-
-
-
         }
     }
 };
@@ -433,6 +433,17 @@ jfloat z1,jfloat z2,jfloat z3)
 {
     
     scale = sc;
+
+
+    rotation[0]=x1;
+    rotation[1]=x2;
+    rotation[2]=x3;
+    rotation[3]=y1;
+    rotation[4]=y2;
+    rotation[5]=y3;
+    rotation[6]=z1;
+    rotation[7]=z2;
+    rotation[8]=z3;
     
     SampleUtils::setRotation33to44(x1,x2,x3,y1,y2,y3,z1,z2,z3,sensorRotation.data);
     //sensorRotation = SampleMath::Matrix44FInverse(sensorRotation);
@@ -474,7 +485,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     // Explicitly render the Video Background
     sampleAppRenderer->renderVideoBackground();
     glEnable(GL_DEPTH_TEST);
-
+    
     // We must detect if background reflection is active and adjust the culling direction.
     // If the reflection is active, this means the post matrix has been reflected as well,
     // therefore standard counter clockwise face culling will result in "inside out" models.
@@ -510,6 +521,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
         } else {
             hasMarker=true;
+            mvo_reset();
             if (strcmp(trackable.getName(), currMarker->name) != 0) {
 
                 LOG("New marker %s", trackable.getName());
@@ -522,6 +534,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     Vuforia::Matrix44F modelViewProjection;
     Vuforia::Matrix44F joinedmv;
 
+    //joinedmv = sensorRotation;
     if(!hasMarker){
         if(lastMarker){
             Vuforia::Matrix44F resMatrix;
@@ -538,7 +551,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                         &joinedmv.data[0]);
         }
         
-    } else if(hasMarker){
+    } else{
         joinedmv=markerMatrix;
 
         lastMat=sensorRotation;
@@ -552,7 +565,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                          mvoTranslation[2],
                                             &joinedmv.data[0]);
     }
-    
+   
 
 
     SampleUtils::translatePoseMatrix(currMarker->translation[0],
@@ -576,14 +589,14 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     SampleUtils::multiplyMatrix(&projectionMatrix.data[0],
                                 &joinedmv.data[0] ,
                                 &modelViewProjection.data[0]);
-
+ 
     glUseProgram(shaderProgramID);
 
 
     std::vector<MeshInfo*> modelMeshes= gAssimpObject->getMeshes();
     unsigned int numberOfLoadedMeshes = modelMeshes.size();
 
-// render all meshes
+    // render all meshes
     for (unsigned int n = 0; n < numberOfLoadedMeshes; ++n) {
     if (modelMeshes[n]->mTextureID) {
         glActiveTexture(GL_TEXTURE0);

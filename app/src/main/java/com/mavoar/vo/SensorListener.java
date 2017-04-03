@@ -12,7 +12,7 @@ public class SensorListener implements SensorEventListener {
 	
 	static final float ALPHA = 0.25f; // if ALPHA = 1 OR 0, no filter applies.
 
-	String Tag= "SensorMAVOAR";	
+	static String Tag= "SensorMAVOAR";	
 	float[] dAcc=new float[3];	
 	float[] finalAcc=new float[3];
 	float[] samplesAcc={0,0,0};	
@@ -52,6 +52,7 @@ public class SensorListener implements SensorEventListener {
         mSMan.registerListener(this, sAcc, rate);
 		mSMan.registerListener(this, sRot, rate);
 
+
 	}
 	
     protected void pause() {
@@ -69,10 +70,14 @@ public class SensorListener implements SensorEventListener {
 		Pos[1] =0;
 		Pos[2] =0;
 
+		Log.d(Tag,"Scale: "+scale);
+
     	return scale;
     }
 
 	public static synchronized float[] getRot(){
+		Log.d(Tag,"Rot: "+Rot[0] +" "+Rot[1]+" "+Rot[2]);
+
 		return Rot;
 	}
 
@@ -114,20 +119,6 @@ public class SensorListener implements SensorEventListener {
     		dAcc[1]=event.values[1];
     		dAcc[2]=event.values[2];
     		
-    		/* if(calibration <=10 && (dAcc[0]!= 0.0f | dAcc[1]!= 0.0f | dAcc[2]!= 0.0f)){
-    			Cal[0] += dAcc[0];
-    			Cal[1] += dAcc[1];
-    			Cal[2] += dAcc[2];
-    			calibration++;
-    		}
-    		else if(calibration ==11){
-    			Cal[0] /= 10.0;
-    			Cal[1] /= 10.0;
-    			Cal[2] /= 10.0;
-    			
-    			calibration++;
-    		}*/
-    		        //else{
     			if(samples <= 3){
     				samplesAcc[0] += dAcc[0] - Cal[0];
     				samplesAcc[1] += dAcc[1] - Cal[1];
@@ -140,11 +131,7 @@ public class SensorListener implements SensorEventListener {
     				samples++;
     			}
     			else{
-    				
-    				/*samplesAcc[0] /= 3.0;
-    				samplesAcc[1] /= 3.0;
-    				samplesAcc[2] /= 3.0;*/
-    				
+  				
     				
     				finalAcc[0] = samplesAcc[0] - Cal[0];
     				finalAcc[1] = samplesAcc[1] - Cal[1];
@@ -193,11 +180,6 @@ public class SensorListener implements SensorEventListener {
 		} 
     	return output; 
 	}
-
-	private native void scale(double scale);
-	private native void rotationVector(float[] rot);
-
-
 
 }
     

@@ -25,7 +25,7 @@ void mvoInit(float focalLength,float ppx,float ppy);
 float* mvo_processFrame(jlong matAddrGray,
                       jdouble scale,
                       float* rotation);
-
+void mvo_reset();
 struct Frames {
    Mat prev_frame;
    Mat curr_frame;

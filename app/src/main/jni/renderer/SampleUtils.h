@@ -42,6 +42,8 @@ public:
                                 float y1,float y2,float y3,
                                 float z1,float z2,float z3,
                                 float* mat);
+
+    static void setIdentity(float* mat);
     /// Applies a rotation.
     static void rotatePoseMatrix(float angle, float x, float y, float z, 
         float* nMatrix = NULL);

@@ -4,6 +4,7 @@
 #include <jni.h>
 #include <string>
 #include <android/log.h>
+#include <math.h>      
 
 #include "opencv2/opencv.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -58,6 +59,18 @@ void setRotationFromSensor(){
     matrices.total_rotation.at<double>(8)= sensors.rotation[8];
 }
 
+void fixTranslationDirection(){
+    /*double xzScale = sqrt(pow(matrices.total_rotation.at<double>(0),2)+pow(matrices.total_rotation.at<double>(2),2));
+    double xzSensorScale = sqrt(pow(sensors.rotation[0],2)+pow(sensors.rotation[2],2));
+
+    double sensorRot[2];
+    sensorRot[0]=sensors.rotation[0]/xzSensorScale;
+    sensorRot[1]=sensors.rotation[2]/xzSensorScale;
+
+    matrices.total_translation.at<double>(0) = xzScale*sensorRot[0];
+    matrices.total_translation.at<double>(2) = xzScale*sensorRot[1];*/ 
+}
+
 void mvo_reset(){
     matrices.total_translation.at<double>(0)= 0.0f;
     matrices.total_translation.at<double>(1)= 0.0f;
@@ -91,7 +104,7 @@ void initialFix(){
                     matrices.total_translation = matrices.total_translation + sensors.scale * (matrices.total_rotation * matrices.translation);
                 }
 
-
+                fixTranslationDirection();
                 stage=WAITING_FRAME;
 
             } 
@@ -124,6 +137,7 @@ void mvoDetectAndTrack(){
             if ((sensors.scale > 0.1) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))
                     && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))) {
                 matrices.total_translation = matrices.total_translation + sensors.scale * (matrices.total_rotation * matrices.translation);
+                fixTranslationDirection(); 
             }
             frames.prev_features = frames.curr_features;
         }
@@ -164,7 +178,7 @@ sensors.rotation= rotation;
 
     switch(stage){
         case WAITING_FIRST_FRAME:
-                LOGD("First Frame");
+            LOGD("First Frame");
             stage=WAITING_SECOND_FRAME;
             frames.prev_frame = ((Mat*)matAddrGray)->clone();
             if(envgl)
@@ -185,6 +199,9 @@ sensors.rotation= rotation;
         mvoDetectAndTrack();
         if(envgl)
             returnString = returnMessage(envgl,"Tracking");
+
+
+        
 
         tot_t[0]=(float)matrices.total_translation.at<double>(0);
         tot_t[1]=(float)matrices.total_translation.at<double>(1);

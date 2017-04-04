@@ -546,6 +546,21 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
             joinedmv=markerMatrix;
 
+
+            if(mvo && init){
+                Vuforia::Matrix44F mvo_tr;
+                SampleUtils::setIdentity(mvo_tr.data);
+                
+                
+                SampleUtils::translatePoseMatrix(mvoTranslation[0],
+                                                0.0f,
+                                                mvoTranslation[2],
+                                                    &mvo_tr.data[0]);
+
+                SampleUtils::multiplyMatrix(mvo_tr.data,
+                                        &joinedmv.data[0] ,
+                                        &joinedmv.data[0]);
+            }
             SampleUtils::multiplyMatrix(&resMatrix.data[0],
                                         &joinedmv.data[0] ,
                                         &joinedmv.data[0]);
@@ -559,12 +574,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
     }
 
-    if(mvo && init){
-        SampleUtils::translatePoseMatrix(mvoTranslation[0],
-                                         mvoTranslation[1],
-                                         mvoTranslation[2],
-                                            &joinedmv.data[0]);
-    }
+
    
 
 

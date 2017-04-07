@@ -149,6 +149,10 @@ float ppx;
 float ppy;
 
 
+
+float debug=0.0;
+
+
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
 {
@@ -431,45 +435,59 @@ jfloat x1,jfloat x2,jfloat x3,
 jfloat y1,jfloat y2,jfloat y3,
 jfloat z1,jfloat z2,jfloat z3)
 {
-    
-    scale = sc;
+    try{
+        
+        scale = sc;
 
 
-    rotation[0]=x1;
-    rotation[1]=x2;
-    rotation[2]=x3;
-    rotation[3]=y1;
-    rotation[4]=y2;
-    rotation[5]=y3;
-    rotation[6]=z1;
-    rotation[7]=z2;
-    rotation[8]=z3;
-    
-    SampleUtils::setRotation33to44(x1,x2,x3,y1,y2,y3,z1,z2,z3,sensorRotation.data);
-    //sensorRotation = SampleMath::Matrix44FInverse(sensorRotation);
+        rotation[0]=x1;
+        rotation[1]=x2;
+        rotation[2]=x3;
+        rotation[3]=y1;
+        rotation[4]=y2;
+        rotation[5]=y3;
+        rotation[6]=z1;
+        rotation[7]=z2;
+        rotation[8]=z3;
+        
+        SampleUtils::setRotation33to44(x1,x2,x3,y1,y2,y3,z1,z2,z3,sensorRotation.data);
+        //sensorRotation = SampleMath::Matrix44FInverse(sensorRotation);
 
-    SampleUtils::multiplyMatrix(&conv.data[0],
-                                    &sensorRotation.data[0] ,
-                                    &sensorRotation.data[0]);
-    SampleUtils::multiplyMatrix(&aux.data[0],
-                                            &sensorRotation.data[0] ,
-                                            &sensorRotation.data[0]);
-    //sensorRotation = SampleMath::Matrix44FTranspose(sensorRotation);
-    //SampleUtils::printMatrix(sensorRotation.data);
+        SampleUtils::multiplyMatrix(&conv.data[0],
+                                        &sensorRotation.data[0] ,
+                                        &sensorRotation.data[0]);
+        SampleUtils::multiplyMatrix(&aux.data[0],
+                                                &sensorRotation.data[0] ,
+                                                &sensorRotation.data[0]);
 
-    /*SampleUtils::multiplyMatrix(conv.data,sensorRotation.data,&sensorRotation.data[0]);
-    SampleUtils::multiplyMatrix(aux.data,sensorRotation.data,&sensorRotation.data[0]);*/
+        // Call renderFrame from SampleAppRenderer which will loop through the rendering primitives
+        // views and then it will call renderFrameForView per each of the views available,
+        // in this case there is only one view since it is not rendering in stereo mode
+        sampleAppRenderer->renderFrame(
 
-    //SampleUtils::printMatrix(sensorRotation.data);
+        );
+    }
+    catch(int a){
 
-    //SampleUtils::multiplyMatrix(aux.data,sensorRotation.data,&sensorRotation.data[0]);
+    }
+}
 
-    // Call renderFrame from SampleAppRenderer which will loop through the rendering primitives
-    // views and then it will call renderFrameForView per each of the views available,
-    // in this case there is only one view since it is not rendering in stereo mode
-    sampleAppRenderer->renderFrame(
+float* setMatforVO(float* mat){
+    float* out= new float[9];
 
-    );
+    out[0]=mat[0];
+    out[1]=mat[1];
+    out[2]=mat[2];
+
+    out[3]=mat[4];
+    out[4]=mat[5];
+    out[5]=mat[6];
+
+    out[6]=mat[8];
+    out[7]=mat[9];
+    out[8]=mat[10];
+
+    return out;
 }
 
 // This method will be called from SampleAppRenderer per each rendering primitives view
@@ -499,10 +517,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
     LOG("NUmber of trackables: %d",state->getNumTrackableResults());
 
-    // Did we find any trackables this frame?
-    if(state->getNumTrackableResults() <=1 && mvo && init){
-        mvoTranslation=mvo_processFrame((long)&curr_frame,scale,rotation);
-    }
+  
 
     for(int tIdx = 0; tIdx < state->getNumTrackableResults(); tIdx++) {
         // Get the trackable:
@@ -521,7 +536,8 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
         } else {
             hasMarker=true;
-            mvo_reset();
+            if(lastMarker)
+                mvo_reset();
             if (strcmp(trackable.getName(), currMarker->name) != 0) {
 
                 LOG("New marker %s", trackable.getName());
@@ -535,6 +551,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     Vuforia::Matrix44F joinedmv;
 
     //joinedmv = sensorRotation;
+    
     if(!hasMarker){
         if(lastMarker){
             Vuforia::Matrix44F resMatrix;
@@ -542,20 +559,23 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
             SampleUtils::multiplyMatrix(sensorRotation.data, 
             inverseSensor.data,resMatrix.data);
-            SampleUtils::printMatrix(resMatrix.data);
 
             joinedmv=markerMatrix;
 
-
-            if(mvo && init){
+              // Did we find any trackables this frame?
+            if(state->getNumTrackableResults() <=1 && mvo && init){
+                mvoTranslation=mvo_processFrame((long)&curr_frame,scale,setMatforVO(resMatrix.data));
+            
                 Vuforia::Matrix44F mvo_tr;
                 SampleUtils::setIdentity(mvo_tr.data);
-                
-                
-                SampleUtils::translatePoseMatrix(mvoTranslation[0],
-                                                0.0f,
-                                                mvoTranslation[2],
+            
+
+                SampleUtils::translatePoseMatrix( 0.0f,
+                                              0.0f,
+                                                mvoTranslation[0],
                                                     &mvo_tr.data[0]);
+
+                SampleUtils::printVector(mvoTranslation);
 
                 SampleUtils::multiplyMatrix(mvo_tr.data,
                                         &joinedmv.data[0] ,
@@ -600,6 +620,8 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                 &joinedmv.data[0] ,
                                 &modelViewProjection.data[0]);
  
+
+
     glUseProgram(shaderProgramID);
 
 

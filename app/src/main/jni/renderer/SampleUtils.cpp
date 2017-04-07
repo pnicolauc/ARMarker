@@ -15,6 +15,12 @@ countries.
 
 
 void
+SampleUtils::printVector(const float* mat)
+{
+        LOG("%7.3f %7.3f %7.3f", mat[0], mat[1], mat[2]);
+}
+
+void
 SampleUtils::printMatrix(const float* mat)
 {
     for(int r=0; r<4; r++,mat+=4)
@@ -210,6 +216,19 @@ float* invertMatrix(float* m)
         invOut[i] = inv[i] * det;
 
     return invOut;
+}
+
+void SampleUtils::multiplyMatrixForVector(float* mat1,float* mat2,float* out){
+    float aux[3];
+    aux[0]=(mat1[0]*mat2[0])+(mat1[4]*mat2[1])+(mat1[8]*mat2[2]);
+
+    aux[1]=(mat1[1]*mat2[0])+(mat1[5]*mat2[1])+(mat1[9]*mat2[2]);
+
+    aux[2]=(mat1[2]*mat2[0])+(mat1[6]*mat2[1])+(mat1[10]*mat2[2]);
+
+    out[0]=aux[0];
+    out[1]=aux[1];
+    out[2]=aux[2];
 }
 
 float*

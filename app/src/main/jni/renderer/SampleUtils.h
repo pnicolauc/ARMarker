@@ -23,6 +23,8 @@ class SampleUtils
 {
 public:
 
+    static void printVector(const float* mat);
+
     /// Prints a 4x4 matrix.
     static void printMatrix(const float* matrix);
 
@@ -36,6 +38,8 @@ public:
     /// Set the translation components of this 4x4 matrix.
     static void translatePoseMatrix(float x, float y, float z,
         float* nMatrix = NULL);
+
+    static void multiplyMatrixForVector(float* mat1,float* mat2,float* out);
     
     static void
     setRotation33to44(float x1,float x2,float x3,

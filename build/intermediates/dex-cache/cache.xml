@@ -12,15 +12,6 @@
     </item>
     <item
         is-multidex="false"
-        jar="/home/al/.gradle/caches/modules-2/files-2.1/com.google.code.gson/gson/2.2.4/a60a5e993c98c864010053cb901b7eab25306568/gson-2.2.4.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="25.0.2"
-        sha1="a60a5e993c98c864010053cb901b7eab25306568">
-        <dex dex="/home/al/Dropbox/Tese/MAVOAR/app/build/intermediates/pre-dexed/debug/gson-2.2.4_5511834b377df20279da71d32b245e12c4a3c6cd.jar" />
-    </item>
-    <item
-        is-multidex="false"
         jar="/home/al/Dropbox/Tese/MAVOAR/vuforia-build/java/vuforia/Vuforia.jar"
         jumboMode="false"
         optimize="true"

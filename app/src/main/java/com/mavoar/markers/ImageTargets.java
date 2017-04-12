@@ -42,7 +42,7 @@ import android.widget.RelativeLayout;
 import android.widget.Switch;
 import android.widget.Toast;
 
-
+import android.util.Log;
 import com.mavoar.R;
 import com.mavoar.markers.dataset.Marker;
 import com.mavoar.renderer.GLRenderer;
@@ -51,6 +51,20 @@ import com.mavoar.utils.DebugLog;
 import com.vuforia.Vuforia;
 import com.vuforia.INIT_ERRORCODE;
 import com.vuforia.INIT_FLAGS;
+import android.graphics.Bitmap;
+import android.widget.ImageView;
+
+
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
 
 import static com.vuforia.CameraDevice.CAMERA_DIRECTION.CAMERA_DIRECTION_DEFAULT;
 
@@ -71,8 +85,6 @@ public class ImageTargets
     private double ratio;
 
     Activity activity;
-
-
     // Focus mode constants:
     private static final int FOCUS_MODE_NORMAL = 0;
     private static final int FOCUS_MODE_CONTINUOUS_AUTO = 1;
@@ -106,6 +118,8 @@ public class ImageTargets
 
     // Constant representing invalid screen orientation to trigger a query:
     private static final int INVALID_SCREEN_ROTATION = -1;
+
+    private boolean et=false;
 
     // Last detected screen rotation:
     private int mLastScreenRotation = INVALID_SCREEN_ROTATION;
@@ -141,6 +155,8 @@ public class ImageTargets
      * Creates a handler to update the status of the Loading Dialog from an UI
      * Thread
      */
+    public static ImageView grayscale;
+
     static class LoadingDialogHandler extends Handler
     {
         private final WeakReference<ImageTargets> mImageTargets;
@@ -339,6 +355,7 @@ public class ImageTargets
      * activity.
      */
     public ImageTargets(Bundle args,Activity activity,double ratio,boolean mvo){
+        
         this.activity = activity;
         this.ratio = ratio;
         this.mvo = mvo;
@@ -618,9 +635,9 @@ public class ImageTargets
                 // Native post initialization:
                 onVuforiaInitializedNative();
 
-                // Activate the renderer:
+               // Activate the renderer:
                 mRenderer.mIsActive = true;
-
+                
                 // Now add the GL surface view. It is important
                 // that the OpenGL ES surface view gets added
                 // BEFORE the camera is started and video
@@ -633,7 +650,7 @@ public class ImageTargets
 
                 // Start the camera:
                 updateApplicationStatus(APPSTATUS_CAMERA_RUNNING);
-
+                
                 break;
 
             case APPSTATUS_CAMERA_STOPPED:
@@ -662,8 +679,10 @@ public class ImageTargets
                 layoutParams.height=(int)(layoutParams.height*ratio);*/
                 //mGlView.setLayoutParams(layoutParams);
 
-                //boolean res =startExtendedTracking();
-                //DebugLog.LOGE("extended tracking: "+res);
+                if(et){
+                    boolean res =startExtendedTracking();
+                    DebugLog.LOGE("extended tracking: "+res);
+                }
                 break;
 
             default:
@@ -715,6 +734,7 @@ public class ImageTargets
 
         mRenderer = new GLRenderer();
         mRenderer.mActivity = this;
+
         mGlView.setRenderer(mRenderer);
 
 
@@ -728,6 +748,7 @@ public class ImageTargets
         // Gets a reference to the loading dialog
         mLoadingDialogContainer = mUILayout
             .findViewById(R.id.loading_indicator);
+        //grayscale =(ImageView) mUILayout.findViewById(R.id.grayscale);
 
         // Shows the loading indicator at start
         loadingDialogHandler.sendEmptyMessage(SHOW_LOADING_DIALOG);
@@ -736,6 +757,20 @@ public class ImageTargets
         activity.addContentView(mUILayout, new LayoutParams(LayoutParams.MATCH_PARENT,
             LayoutParams.MATCH_PARENT));
 
+
+    }
+
+
+    public static void setGrayscale(Mat m) {
+        // make a mat and draw something
+        Imgproc.putText(m, "hi there ;)", new Point(30,80), Core.FONT_HERSHEY_SCRIPT_SIMPLEX, 2.2, new Scalar(200,200,0),2);
+
+        // convert to bitmap:
+        Bitmap bm = Bitmap.createBitmap(m.cols(), m.rows(),Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(m, bm);
+
+        // find the imageview and draw it!
+        grayscale.setImageBitmap(bm);
     }
 
     /** Tells native code to switch dataset as soon as possible */

@@ -23,8 +23,41 @@ SampleUtils::printVector(const float* mat)
 void
 SampleUtils::printMatrix(const float* mat)
 {
+    LOG("Matrix");
+
     for(int r=0; r<4; r++,mat+=4)
         LOG("%7.3f %7.3f %7.3f %7.3f", mat[0], mat[1], mat[2], mat[3]);
+}
+
+void SampleUtils::setIDMatrix(float x,float y,float z,float* mat){
+    mat[0]  = x;
+    mat[1]  = 0.0f;
+    mat[2]  = 0.0f;
+    mat[3]  = 0.0f;
+                     
+    mat[4]  = 0.0f;
+    mat[5]  = y;
+    mat[6]  = 0.0f;
+    mat[7]  = 0.0f;
+                     
+    mat[8]  = 0.0f;
+    mat[9]  = 0.0f;
+    mat[10] = z;
+    mat[11] = 0.0f;
+
+    mat[12] = 0.0f;
+    mat[13] = 0.0f;
+    mat[14] = 0.0f;
+    mat[15] = 1.0f;
+}
+
+void
+SampleUtils::printMatrix33(const float* mat)
+{
+    LOG("Matrix");
+
+    for(int r=0; r<3; r++,mat+=3)
+        LOG("%7.3f %7.3f %7.3ff", mat[0], mat[1], mat[2]);
 }
 
 void

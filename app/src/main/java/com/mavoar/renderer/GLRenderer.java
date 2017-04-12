@@ -22,6 +22,17 @@ import com.mavoar.vo.SensorListener;
 import com.vuforia.Vuforia;
 
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
+
 /** The renderer class for the ImageTargets sample. */
 public class GLRenderer implements GLSurfaceView.Renderer
 {
@@ -29,11 +40,14 @@ public class GLRenderer implements GLSurfaceView.Renderer
     
     /** Reference to main activity **/
     public ImageTargets mActivity;
+
     
-    
+    Mat m;
     /** Native function for initializing the renderer. */
     public native void initRendering();
-    
+
+    public native void getMat(long mat);
+
     
     /** Native function to update the renderer. */
     public native void updateRendering(int width, int height);
@@ -47,9 +61,9 @@ public class GLRenderer implements GLSurfaceView.Renderer
     public void onSurfaceCreated(GL10 gl, EGLConfig config)
     {
         DebugLog.LOGD("GLRenderer::onSurfaceCreated");
-        
         // Call native function to initialize rendering:
         initRendering();
+        m= new Mat();
         
         // Call Vuforia function to (re)initialize rendering after first use
         // or after OpenGL ES context was lost (e.g. after onPause/onResume):
@@ -61,7 +75,6 @@ public class GLRenderer implements GLSurfaceView.Renderer
     public void onSurfaceChanged(GL10 gl, int width, int height)
     {
         DebugLog.LOGD("GLRenderer::onSurfaceChanged");
-        
         // Call native function to update rendering when render surface
         // parameters have changed:
         updateRendering(width, height);
@@ -85,7 +98,7 @@ float z1,float z2,float z3);
     {
         if (!mIsActive)
             return;
-        
+
         // Update render view (projection matrix and viewport) if needed:
         mActivity.updateRenderView();
         
@@ -97,5 +110,12 @@ float z1,float z2,float z3);
         renderFrame(scale,rot[0],rot[1],rot[2],rotmat[0],rotmat[1],rotmat[2],
         rotmat[3],rotmat[4],rotmat[5],
         rotmat[6],rotmat[7],rotmat[8]);
+        /*m = Mat.zeros(400,400, CvType.CV_8UC1);
+        Imgproc.putText(m, "hi there ;)", new Point(30,80), Core.FONT_HERSHEY_SCRIPT_SIMPLEX, 2.2, new Scalar(200,200,0),2);
+
+        /*getMat(m.getNativeObjAddr());
+
+        ImageTargets.setGrayscale(m);*/
+
     }
 }

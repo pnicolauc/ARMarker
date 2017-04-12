@@ -12,4 +12,10 @@
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true" />
 
+            <!--ImageView
+        android:id="@+id/grayscale"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/logo" /-->
+
 </RelativeLayout>

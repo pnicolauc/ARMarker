@@ -6,5 +6,9 @@
   {
     "folder":"tarmac",
     "name":"Tarmac"
+  },
+  {
+    "folder":"room",
+    "name":"Room"
   }
 ]

@@ -105,8 +105,7 @@ void initialFix(){
                 }else{
                     matrices.total_translation = matrices.total_translation + sensors.scale * (matrices.total_rotation * matrices.translation);
                 }
-
-                fixTranslationDirection();
+                
                 stage=WAITING_FRAME;
 
             } 
@@ -180,6 +179,8 @@ float* rotation) {
     sensors.scale= (double)scale;
     sensors.rotation= rotation;
 
+   
+
         switch(stage){
             case WAITING_FIRST_FRAME:
                 LOGD("First Frame");
@@ -195,10 +196,6 @@ float* rotation) {
                 initialFix();
                 if(envgl)
                     returnString = returnMessage(envgl,"Fixing");
-
-                tot_t[0]=(float)matrices.total_translation.at<double>(0);
-                tot_t[1]=(float)matrices.total_translation.at<double>(1);
-                tot_t[2]=(float)matrices.total_translation.at<double>(2); 
             break;
             case WAITING_FRAME:
                 LOGD("Normal Frame");
@@ -214,10 +211,11 @@ float* rotation) {
                 tot_t[2]=(float)matrices.total_translation.at<double>(2);
                 break;
         }
+        
         LOGD("Received Frame");
 
         LOGD("mvo %f %f %f",tot_t[0],tot_t[1],tot_t[2]);
-
+    
     }
     catch (int e)
     {

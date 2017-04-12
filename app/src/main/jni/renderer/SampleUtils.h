@@ -27,6 +27,12 @@ public:
 
     /// Prints a 4x4 matrix.
     static void printMatrix(const float* matrix);
+    
+    /// Prints a 3x3 matrix.
+    static void printMatrix33(const float* mat);
+
+    static void setIDMatrix(float x,float y,float z,float* mat);
+
 
     /// Prints GL error information.
     static void checkGlError(const char* operation);

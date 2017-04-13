@@ -596,8 +596,11 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                             &mvo_tr.data[0]);*/
 
               // Did we find any trackables this frame?
-           /* if(state->getNumTrackableResults() <=1 && mvo && init){
+            /*if(state->getNumTrackableResults() <=1 && mvo && init){
                 mvoTranslation=mvo_processFrame((long)&curr_frame,scale,setMatforVO(resMatrix.data));
+
+                float translation= sqrt(pow(mvoTranslation[0],2)+pow(mvoTranslation[1],2)+pow(mvoTranslation[2],2));
+
             
 
                 SampleUtils::translatePoseMatrix( 0.0f,
@@ -612,33 +615,38 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                 SampleUtils::multiplyMatrix(mvo_tr.data,
                                         &joinedmv.data[0] ,
                                         &joinedmv.data[0]);
-            }*/
-            float aux[3];
-            aux[0]=0.0f;
-            aux[1]=0.0f;
-            aux[2]=-cumulative;
-
-            SampleUtils::multiplyMatrixForVector(&sensorRotation.data[0],
-                                        aux,
-                                        aux);
-
-            /*SampleUtils::multiplyMatrixForVector(&resMatrix.data[               // SampleUtils::translatePoseMatrix( 0.0f,scale,0.0f,
-                //                                    &joinedmv.data[0]);
-              /*  SampleUtils::multiplyMatrix(&noUpMatrix.data[0],
-                                        &resMatrix.data[0] ,
-                                        &noUpMatrix.data[0]);0],
-                                        aux,
-                                        aux);
-           
-             SampleUtils::translatePoseMatrix(aux[0],aux[1],aux[2],
-             mvo_tr.data);*/
-             
-
-
+            }*/           
 
             SampleUtils::multiplyMatrix(&resMatrix.data[0],
                                         &joinedmv.data[0] ,
                                         &joinedmv.data[0]);
+
+            float view[3];
+            /*
+            view[0]=joinedmv.data[0]*cumulative;
+            view[1]=joinedmv.data[4]*cumulative;
+            view[2]=joinedmv.data[8]*cumulative;
+*/
+            view[0]=0.0f;
+            view[1]=0.0f;
+            view[2]=-cumulative;
+           
+
+
+            SampleUtils::translatePoseMatrix(view[0],view[1],view[2],
+             mvo_tr.data);
+            SampleUtils::multiplyMatrix(&mvo_tr.data[0],
+                                        &joinedmv.data[0],
+                                        &joinedmv.data[0]);
+
+            SampleUtils::printMatrix(mvo_tr.data);
+
+
+            /*
+            SampleUtils::multiplyMatrix(&joinedmv.data[0],
+                                        &mvo_tr.data[0] ,
+                                        &joinedmv.data[0]);*/
+
 
         }
         

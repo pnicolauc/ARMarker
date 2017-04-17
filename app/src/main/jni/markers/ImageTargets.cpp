@@ -156,6 +156,12 @@ float debug=0.0;
 
 float cumulative=0.0f;
 
+float lastView[3];
+
+
+std::vector<float*> vec = std::vector<float*>();
+
+
 
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
@@ -578,9 +584,9 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
             joinedmv=markerMatrix;
             if(scale>0.3){
-                    cumulative+=0.05;
+                    cumulative=0.05;
                     
-            }
+            }else cumulative=0.0f;
             Vuforia::Matrix44F mvo_tr;
             SampleUtils::setIdentity(mvo_tr.data);
 
@@ -615,38 +621,36 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                 SampleUtils::multiplyMatrix(mvo_tr.data,
                                         &joinedmv.data[0] ,
                                         &joinedmv.data[0]);
-            }*/           
-
-            SampleUtils::multiplyMatrix(&resMatrix.data[0],
-                                        &joinedmv.data[0] ,
-                                        &joinedmv.data[0]);
-
+            }*/    
             float view[3];
-            /*
-            view[0]=joinedmv.data[0]*cumulative;
-            view[1]=joinedmv.data[4]*cumulative;
-            view[2]=joinedmv.data[8]*cumulative;
-*/
+
             view[0]=0.0f;
             view[1]=0.0f;
             view[2]=-cumulative;
-           
-
-
-            SampleUtils::translatePoseMatrix(view[0],view[1],view[2],
-             mvo_tr.data);
-            SampleUtils::multiplyMatrix(&mvo_tr.data[0],
+            SampleUtils::multiplyMatrix(&resMatrix.data[0],
                                         &joinedmv.data[0],
                                         &joinedmv.data[0]);
+            Vuforia::Matrix44F inverseModelView = SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(joinedmv));
+            // pull the camera position and look at vectors from this matrix
+            
+            
+            Vuforia::Vec3F cameraLookAt(inverseModelView.data[8], inverseModelView.data[9], inverseModelView.data[10]);
 
-            SampleUtils::printMatrix(mvo_tr.data);
+            view[0]=(-cameraLookAt.data[0])*cumulative;
+            view[1]=(-cameraLookAt.data[1])*cumulative;
+            view[2]=(-cameraLookAt.data[2])*cumulative;
+            
+            view[0]+=lastView[0];
+            view[1]+=lastView[1];
+            view[2]+=lastView[2];
+                    
+           
+            SampleUtils::translatePoseMatrix(view[0],view[1],view[2],
+                                        joinedmv.data); 
 
-
-            /*
-            SampleUtils::multiplyMatrix(&joinedmv.data[0],
-                                        &mvo_tr.data[0] ,
-                                        &joinedmv.data[0]);*/
-
+            lastView[0]=view[0];
+            lastView[1]=view[1];
+            lastView[2]=view[2];
 
         }
         
@@ -682,6 +686,14 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                 &modelViewProjection.data[0]);
  
 
+    float trans_debug[3];
+    trans_debug[0]=joinedmv.data[12];
+    trans_debug[1]=joinedmv.data[13];
+    trans_debug[2]=joinedmv.data[14];
+    vec.push_back(trans_debug);
+
+
+    SampleUtils::printMatrix(joinedmv.data);
 
     glUseProgram(shaderProgramID);
 
@@ -809,6 +821,36 @@ Java_com_mavoar_markers_ImageTargets_deinitApplicationNative(
 
     delete sampleAppRenderer;
     sampleAppRenderer = NULL;
+}
+
+JNIEXPORT void JNICALL
+Java_com_mavoar_markers_ImageTargets_saveTrajectory(
+                                                        JNIEnv* env, jobject obj)
+{
+    LOG("Java_com_mavoar_markers_ImageTargets_saveTrajectory");
+
+    FILE* file = fopen("/sdcard/mavoar_traj.txt","w+");
+
+    int vecSize= vec.size();
+
+    std::string str;
+
+    for(float* i : vec){
+        for(int j=0;j<3;j++){
+            std::stringstream ss;
+            ss << i[j];
+            str.append(ss.str());
+            str.append(" ");
+        }
+        str.append("\n");
+    }
+
+    if (file != NULL)
+    {
+        fputs(str.c_str(), file);
+        fflush(file);
+        fclose(file);
+    }
 }
 
 

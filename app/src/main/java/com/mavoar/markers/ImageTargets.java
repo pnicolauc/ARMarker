@@ -66,6 +66,9 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.File;
+import java.io.FileOutputStream;
+
 import static com.vuforia.CameraDevice.CAMERA_DIRECTION.CAMERA_DIRECTION_DEFAULT;
 
 /** The main activity for the ImageTargets sample. */
@@ -486,6 +489,7 @@ public class ImageTargets
     /** Native function to deinitialize the application. */
     private native void deinitApplicationNative();
 
+    private native void saveTrajectory();
 
     /** The final call you receive before your activity is destroyed. */
     public void destroy()
@@ -507,6 +511,7 @@ public class ImageTargets
         // and loading the tracker datasets do not overlap:
         synchronized (mShutdownLock)
         {
+            saveTrajectory();
             // Do application deinitialization in native code:
             deinitApplicationNative();
             // Destroy the tracking data set:

@@ -3,21 +3,138 @@
 
     <item
         is-multidex="false"
-        jar="/home/al/Dropbox/Tese/MAVOAR/openCVLibrary310/build/intermediates/bundles/default/classes.jar"
+        jar="C:\Users\80nic\.android\build-cache\704f0aed98d6734dcb9c1a43ceb779d496ce31bd\output\jars\classes.jar"
         jumboMode="false"
         optimize="true"
         revision="25.0.2"
-        sha1="f06d476864a3dd2291535a6c89241c69f3201cf9">
-        <dex dex="/home/al/Dropbox/Tese/MAVOAR/app/build/intermediates/pre-dexed/debug/classes_c88891427dceb126a0f178b613ae9876e614142f.jar" />
+        sha1="810f41e5b7fd99f196ebeabe865ba2c54e7e76dc">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_c2f86c3eacb7cc1d214f32c6241eb186e8346296.jar" />
     </item>
     <item
         is-multidex="false"
-        jar="/home/al/Dropbox/Tese/MAVOAR/vuforia-build/java/vuforia/Vuforia.jar"
+        jar="C:\Users\80nic\.android\build-cache\e40d0d0a27ae5941745d2ac1bbf45941d6ad2db8\output\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="ee394a892dd21c03a528139c1e8d4e0e1264ac84">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_f8167dbba31f12af8281c0af7e1e9752bd051d91.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\80nic\.android\build-cache\2f5eaddeb682e31a1a68aabd258d661b4a33f090\output\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="702d339bc0a81d21354cd7e2cf2b67225fa4a16c">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_77e51a87a6eeaf395cbf670a34210e11b9d3e1cd.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\80nic\.android\build-cache\6582d464c0b81d3a6cf0476e9044ff5abf4b6c3e\output\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="fa0446a14ed5dd3725047d6399ffea771a564b30">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_b150f46bee1cf4ab06b557a242fa762947a5cb5f.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\MAVOAR\openCVLibrary310\build\intermediates\bundles\default\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="ccf040d7d3c2e7d56b3c1be67fb78973118b1bfd">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_ca69cca4463fd1f5fe5be1870a9555585ea03ced.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\80nic\AppData\Local\Android\sdk\extras\m2repository\com\android\support\constraint\constraint-layout-solver\1.0.2\constraint-layout-solver-1.0.2.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="b9cd8fc6bd15cb915735d34535db30ece0c44603">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\constraint-layout-solver-1.0.2_f2e4be3003f218d98cfd84f29a09ee4bd8804034.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\80nic\.gradle\caches\modules-2\files-2.1\com.google.code.gson\gson\2.2.4\a60a5e993c98c864010053cb901b7eab25306568\gson-2.2.4.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="a60a5e993c98c864010053cb901b7eab25306568">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\gson-2.2.4_4a5ec297df8838e3bbfb3ede9f2b195527b95ee5.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\80nic\.android\build-cache\cd7dc1f1bd2a29c6c452c0c05ca156419dbcd018\output\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="8fe8a8f77d651982ce5e18f6187dc4daf914ac57">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_b0991f46677f2abad640bdd7b5b78b4d0bacff96.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\80nic\.android\build-cache\91022b6c5b1c66e92f23e9c3de209e1b7281bb8c\output\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="d7c42c80f6509b9ea4db28ca7859ffae08ec5741">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_e987b936d255ebb2ac01487b67574e171b93438e.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\80nic\.android\build-cache\d2449f0aa67c12a04dca026a5dacd6f35943240d\output\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="67eb33110dbacb46a48175b08ae0c96761d2c17d">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_6168af63f151a99434fedf8429169e86f4acdeab.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\80nic\.android\build-cache\d16687a28e1fbecd44964c4ba3ecda4342a3f63e\output\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="44ee06abb66da30f5855e6bf54574e64cdcd982a">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_45c6fef4daab74046b8496a85ec96f323a91f140.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\MAVOAR\vuforia-build\java\vuforia\Vuforia.jar"
         jumboMode="false"
         optimize="true"
         revision="25.0.2"
         sha1="15f0c848fc592fc94c41fff712b6079d754ecbe2">
-        <dex dex="/home/al/Dropbox/Tese/MAVOAR/app/build/intermediates/pre-dexed/debug/Vuforia_7b136b6debf5a5cf0197289646d47914a4a8819a.jar" />
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\Vuforia_3bc2cea27e624425ebca6f0109d79a616a383b6b.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\80nic\.android\build-cache\b789ebdb8280848547422269aeabfe9ffff3da84\output\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="e820b7be8c035dd522da4bc822e8a76c8e27921a">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_a0af46389d0eaa5cfb345974e558094c94b194c5.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\80nic\.android\build-cache\4154c778b75ceb188e5e60afd11a7313148de249\output\jars\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="cb454b52545859ed2f24a6c01366805b0fa04b22">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_64f546e857632bcbd0ba0c96480e56a4dca877c3.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\80nic\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\25.2.0\support-annotations-25.2.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="4a5a82a027706397fff621b22fd6fa796e91d7c5">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\support-annotations-25.2.0_d57a62bd711a5cc1ed74ab453ac33a7980404371.jar" />
     </item>
 
 </items>

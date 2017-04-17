@@ -589,50 +589,37 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             }else cumulative=0.0f;
             Vuforia::Matrix44F mvo_tr;
             SampleUtils::setIdentity(mvo_tr.data);
-
-
-            /*SampleUtils::translatePoseMatrix( 0.0f,0.0f,-0.5f,
-                                            &mvo_tr.data[0]);
-            SampleUtils::multiplyMatrix(mvo_tr.data,
-                                        &resMatrix.data[0] ,
-                                        &resMatrix.data[0]);*/
-
-            //SampleUtils::setIdentity(mvo_tr.data);
-            /*SampleUtils::translatePoseMatrix( 0.0f,0.0f,-cumulative,
-                                            &mvo_tr.data[0]);*/
-
-              // Did we find any trackables this frame?
-            /*if(state->getNumTrackableResults() <=1 && mvo && init){
+            
+            // Did we find any trackables this frame?
+            SampleUtils::multiplyMatrix(&resMatrix.data[0],
+                                        &joinedmv.data[0],
+                                        &joinedmv.data[0]);
+              
+            if(state->getNumTrackableResults() <=1 && mvo && init){
                 mvoTranslation=mvo_processFrame((long)&curr_frame,scale,setMatforVO(resMatrix.data));
 
                 float translation= sqrt(pow(mvoTranslation[0],2)+pow(mvoTranslation[1],2)+pow(mvoTranslation[2],2));
 
-            
-
-                SampleUtils::translatePoseMatrix( 0.0f,
-                                              /*-mvoTranslation[2]0.0f,
-                                                mvoTranslation[1],
+                SampleUtils::translatePoseMatrix( mvoTranslation[2],
+                                              0.0f,
+                                                0.0f,
                                                     &mvo_tr.data[0]);
 
                 SampleUtils::printVector(mvoTranslation);
 
-               // SampleUtils::printMatrix33(setMatforVO(resMatrix.data));
-
-                SampleUtils::multiplyMatrix(mvo_tr.data,
-                                        &joinedmv.data[0] ,
+                SampleUtils::multiplyMatrix(joinedmv.data,
+                                        &mvo_tr.data[0] ,
                                         &joinedmv.data[0]);
-            }*/    
+            }   
+            
+            
+            Vuforia::Matrix44F inverseModelView = SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(joinedmv));
+            // pull the camera position and look at vectors from this matrix
             float view[3];
 
             view[0]=0.0f;
             view[1]=0.0f;
             view[2]=-cumulative;
-            SampleUtils::multiplyMatrix(&resMatrix.data[0],
-                                        &joinedmv.data[0],
-                                        &joinedmv.data[0]);
-            Vuforia::Matrix44F inverseModelView = SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(joinedmv));
-            // pull the camera position and look at vectors from this matrix
-            
             
             Vuforia::Vec3F cameraLookAt(inverseModelView.data[8], inverseModelView.data[9], inverseModelView.data[10]);
 
@@ -645,8 +632,8 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             view[2]+=lastView[2];
                     
            
-            SampleUtils::translatePoseMatrix(view[0],view[1],view[2],
-                                        joinedmv.data); 
+            //SampleUtils::translatePoseMatrix(view[0],view[1],view[2],
+            //                          joinedmv.data); 
 
             lastView[0]=view[0];
             lastView[1]=view[1];

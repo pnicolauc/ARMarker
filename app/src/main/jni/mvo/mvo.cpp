@@ -57,6 +57,10 @@ void setRotationFromSensor(){
     matrices.total_rotation.at<double>(6)= sensors.rotation[6];
     matrices.total_rotation.at<double>(7)= sensors.rotation[7];
     matrices.total_rotation.at<double>(8)= sensors.rotation[8];
+
+    tot_t[0]=0.0f;
+    tot_t[1]=0.0f;
+    tot_t[2]=0.0f;
 }
 
 void fixTranslationDirection(){
@@ -205,10 +209,17 @@ float* rotation) {
                 if(envgl)
                     returnString = returnMessage(envgl,"Tracking");
 
-
-                tot_t[0]=(float)matrices.total_translation.at<double>(0);
-                tot_t[1]=(float)matrices.total_translation.at<double>(1);
-                tot_t[2]=(float)matrices.total_translation.at<double>(2);
+                //if ((sensors.scale > 0.16) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))
+                //    && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))) {
+                    tot_t[0]=(float)matrices.translation.at<double>(0) * sensors.scale;
+                    tot_t[1]=(float)matrices.translation.at<double>(1) * sensors.scale;
+                    tot_t[2]=(float)matrices.translation.at<double>(2) * sensors.scale;
+               /* }
+                else{
+                    tot_t[0]=0.0f;
+                    tot_t[1]=0.0f;
+                    tot_t[2]=0.0f;
+                }*/
                 break;
         }
         

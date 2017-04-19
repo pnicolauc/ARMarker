@@ -159,8 +159,11 @@ float cumulative=0.0f;
 float lastView[3];
 
 
-std::vector<float*> vec = std::vector<float*>();
+std::vector<float> vec = std::vector<float>();
 
+
+long int framecount=0;
+long int lastframecount=0;
 
 
 // Object to receive update callbacks from Vuforia SDK
@@ -187,6 +190,7 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
                 
                 curr_frame = Mat(image->getHeight(),image->getWidth(),CV_8UC1,(unsigned char *)image->getPixels());
                 LOG("FRAME Vuforia %d %d",curr_frame.rows,curr_frame.cols);
+                framecount++;
 
                 break;
             }
@@ -497,15 +501,15 @@ float* setMatforVO(float* mat){
     float* out= new float[9];
 
     out[0]=mat[0];
-    out[1]=mat[4];
-    out[2]=mat[8];
+    out[1]=mat[1];
+    out[2]=mat[2];
 
-    out[3]=mat[1];
+    out[3]=mat[4];
     out[4]=mat[5];
-    out[5]=mat[9];
+    out[5]=mat[6];
 
-    out[6]=mat[2];
-    out[7]=mat[6];
+    out[6]=mat[8];
+    out[7]=mat[9];
     out[8]=mat[10];
 
 
@@ -584,61 +588,43 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
             joinedmv=markerMatrix;
             if(scale>0.3){
-                    cumulative=0.05;
+                    cumulative=scale/10.0f;
                     
             }else cumulative=0.0f;
             Vuforia::Matrix44F mvo_tr;
             SampleUtils::setIdentity(mvo_tr.data);
             
-            // Did we find any trackables this frame?
-            SampleUtils::multiplyMatrix(&resMatrix.data[0],
+           SampleUtils::multiplyMatrix(&resMatrix.data[0],
                                         &joinedmv.data[0],
                                         &joinedmv.data[0]);
-              
-            if(state->getNumTrackableResults() <=1 && mvo && init){
-                mvoTranslation=mvo_processFrame((long)&curr_frame,scale,setMatforVO(resMatrix.data));
+                  // Did we find any trackables this frame?
 
-                float translation= sqrt(pow(mvoTranslation[0],2)+pow(mvoTranslation[1],2)+pow(mvoTranslation[2],2));
-
-                SampleUtils::translatePoseMatrix( mvoTranslation[2],
-                                              0.0f,
-                                                0.0f,
-                                                    &mvo_tr.data[0]);
-
-                SampleUtils::printVector(mvoTranslation);
-
-                SampleUtils::multiplyMatrix(joinedmv.data,
-                                        &mvo_tr.data[0] ,
-                                        &joinedmv.data[0]);
-            }   
-            
-            
             Vuforia::Matrix44F inverseModelView = SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(joinedmv));
             // pull the camera position and look at vectors from this matrix
-            float view[3];
-
-            view[0]=0.0f;
-            view[1]=0.0f;
-            view[2]=-cumulative;
-            
+            float view[3];            
             Vuforia::Vec3F cameraLookAt(inverseModelView.data[8], inverseModelView.data[9], inverseModelView.data[10]);
 
-            view[0]=(-cameraLookAt.data[0])*cumulative;
-            view[1]=(-cameraLookAt.data[1])*cumulative;
-            view[2]=(-cameraLookAt.data[2])*cumulative;
             
-            view[0]+=lastView[0];
-            view[1]+=lastView[1];
-            view[2]+=lastView[2];
-                    
            
-            //SampleUtils::translatePoseMatrix(view[0],view[1],view[2],
-            //                          joinedmv.data); 
+            if(state->getNumTrackableResults() <=1 && mvo && init && framecount > lastframecount){
 
-            lastView[0]=view[0];
-            lastView[1]=view[1];
-            lastView[2]=view[2];
+                mvoTranslation=mvo_processFrame((long)&curr_frame,scale,setMatforVO(resMatrix.data));
 
+                lastframecount= framecount;
+
+                lastView[0]+=(cameraLookAt.data[0]*mvoTranslation[0]);
+                lastView[1]+=(cameraLookAt.data[1]*mvoTranslation[1]);
+                lastView[2]+=(cameraLookAt.data[2]*mvoTranslation[2]);
+            
+                SampleUtils::printVector(mvoTranslation);
+            
+                SampleUtils::translatePoseMatrix(lastView[0],lastView[1],lastView[2],
+                                        joinedmv.data); 
+
+                vec.push_back(lastView[0]);
+                vec.push_back(lastView[1]);
+                vec.push_back(lastView[2]);
+            }   
         }
         
     } else{
@@ -647,6 +633,10 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
         lastMat=sensorRotation;
         lastMarker=hasMarker;
+
+        lastView[0]=0.0f;
+        lastView[1]=0.0f;
+        lastView[2]=0.0f;
 
     }
 
@@ -673,14 +663,10 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                 &modelViewProjection.data[0]);
  
 
-    float trans_debug[3];
-    trans_debug[0]=joinedmv.data[12];
-    trans_debug[1]=joinedmv.data[13];
-    trans_debug[2]=joinedmv.data[14];
-    vec.push_back(trans_debug);
+    
 
 
-    SampleUtils::printMatrix(joinedmv.data);
+    //SampleUtils::printMatrix(joinedmv.data);
 
     glUseProgram(shaderProgramID);
 
@@ -822,14 +808,16 @@ Java_com_mavoar_markers_ImageTargets_saveTrajectory(
 
     std::string str;
 
-    for(float* i : vec){
-        for(int j=0;j<3;j++){
-            std::stringstream ss;
-            ss << i[j];
-            str.append(ss.str());
-            str.append(" ");
-        }
-        str.append("\n");
+    int ind=1;
+    for(float i : vec){
+        std::stringstream ss;
+        ss << i;
+        str.append(ss.str());
+        str.append(" ");
+        if(ind%3==0)
+            str.append("\n");
+
+        ind++;
     }
 
     if (file != NULL)

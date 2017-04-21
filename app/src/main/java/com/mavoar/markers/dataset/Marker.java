@@ -11,13 +11,11 @@ public class Marker implements Serializable{
     private String name;
     private ArrayList<Float> rotation;
     private ArrayList<Float> translation;
-    private ArrayList<Float> scale;
 
-    public Marker(String name, ArrayList<Float> rotation, ArrayList<Float> translation, ArrayList<Float> scale) {
+    public Marker(String name, ArrayList<Float> rotation, ArrayList<Float> translation) {
         this.name = name;
         this.rotation = rotation;
         this.translation = translation;
-        this.scale = scale;
     }
 
 
@@ -45,11 +43,4 @@ public class Marker implements Serializable{
         this.translation = translation;
     }
 
-    public ArrayList<Float> getScale() {
-        return scale;
-    }
-
-    public void setScale(ArrayList<Float> scale) {
-        this.scale = scale;
-    }
 }

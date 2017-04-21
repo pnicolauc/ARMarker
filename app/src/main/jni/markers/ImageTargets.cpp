@@ -165,6 +165,33 @@ std::vector<float> vec = std::vector<float>();
 long int framecount=0;
 long int lastframecount=0;
 
+float* mvoTranslation=new float[3];
+
+Vuforia::Matrix44F resMatrix;
+
+
+
+bool noTrackerAvailable=false;
+
+
+float* setMatforVO(float* mat){
+    float* out= new float[9];
+
+    out[0]=mat[0];
+    out[1]=mat[1];
+    out[2]=mat[2];
+
+    out[3]=mat[4];
+    out[4]=mat[5];
+    out[5]=mat[6];
+
+    out[6]=mat[8];
+    out[7]=mat[9];
+    out[8]=mat[10];
+
+
+    return out;
+}
 
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
@@ -173,6 +200,10 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
     {
         Vuforia::Frame frame = state.getFrame();
         LOG("images in frame %d.",frame.getNumImages());
+
+        mvoTranslation[0]=0.0f;
+        mvoTranslation[1]=0.0f;
+        mvoTranslation[2]=0.0f;
 
         for (int i = 0; i < frame.getNumImages(); ++i) {
             const Vuforia::Image *image = frame.getImage(i);
@@ -190,7 +221,11 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
                 
                 curr_frame = Mat(image->getHeight(),image->getWidth(),CV_8UC1,(unsigned char *)image->getPixels());
                 LOG("FRAME Vuforia %d %d",curr_frame.rows,curr_frame.cols);
-                framecount++;
+
+                if(noTrackerAvailable && mvo){
+                    mvoTranslation=mvo_processFrame((long)&curr_frame,scale,setMatforVO(resMatrix.data));                  
+                }
+                
 
                 break;
             }
@@ -497,34 +532,9 @@ jfloat z1,jfloat z2,jfloat z3)
     }
 }
 
-float* setMatforVO(float* mat){
-    float* out= new float[9];
-
-    out[0]=mat[0];
-    out[1]=mat[1];
-    out[2]=mat[2];
-
-    out[3]=mat[4];
-    out[4]=mat[5];
-    out[5]=mat[6];
-
-    out[6]=mat[8];
-    out[7]=mat[9];
-    out[8]=mat[10];
-
-
-    return out;
-}
-
 // This method will be called from SampleAppRenderer per each rendering primitives view
 void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& projectionMatrix)
 {
-
-    float* mvoTranslation=new float[3];
-    mvoTranslation[0]=0.0f;
-    mvoTranslation[1]=0.0f;
-    mvoTranslation[2]=0.0f;
-
     bool hasMarker=false;
     // Explicitly render the Video Background
     sampleAppRenderer->renderVideoBackground();
@@ -580,7 +590,6 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     
     if(!hasMarker){
         if(lastMarker){
-            Vuforia::Matrix44F resMatrix;
             Vuforia::Matrix44F inverseSensor= SampleMath::Matrix44FTranspose(lastMat);
 
             SampleUtils::multiplyMatrix(sensorRotation.data, 
@@ -604,27 +613,34 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             float view[3];            
             Vuforia::Vec3F cameraLookAt(inverseModelView.data[8], inverseModelView.data[9], inverseModelView.data[10]);
 
-            
-           
-            if(state->getNumTrackableResults() <=1 && mvo && init && framecount > lastframecount){
+            if(state->getNumTrackableResults() <=1 && mvo){
+                
+                noTrackerAvailable= true;
 
-                mvoTranslation=mvo_processFrame((long)&curr_frame,scale,setMatforVO(resMatrix.data));
+                lastView[0]+=(cameraLookAt.data[0]+mvoTranslation[0]);
+                lastView[1]+=(cameraLookAt.data[1]+mvoTranslation[1]);
+                lastView[2]+=(cameraLookAt.data[2]+mvoTranslation[2]);
 
-                lastframecount= framecount;
+                
+                /*
+                
+                if(scale>0.3){
 
-                lastView[0]+=(cameraLookAt.data[0]*mvoTranslation[0]);
-                lastView[1]+=(cameraLookAt.data[1]*mvoTranslation[1]);
-                lastView[2]+=(cameraLookAt.data[2]*mvoTranslation[2]);
+                    float scaleDown=scale/6;
+                    lastView[0]+=(cameraLookAt.data[0]*-scaleDown);
+                    lastView[1]+=(cameraLookAt.data[1]*-scaleDown);
+                    lastView[2]+=(cameraLookAt.data[2]*-scaleDown);
+                }*/
+
+
+                mvoTranslation[0]=0.0f;
+                mvoTranslation[1]=0.0f;
+                mvoTranslation[2]=0.0f;
             
-                SampleUtils::printVector(mvoTranslation);
-            
+                
                 SampleUtils::translatePoseMatrix(lastView[0],lastView[1],lastView[2],
-                                        joinedmv.data); 
-
-                vec.push_back(lastView[0]);
-                vec.push_back(lastView[1]);
-                vec.push_back(lastView[2]);
-            }   
+                                            joinedmv.data); 
+            } 
         }
         
     } else{
@@ -633,6 +649,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
         lastMat=sensorRotation;
         lastMarker=hasMarker;
+        noTrackerAvailable=false;
 
         lastView[0]=0.0f;
         lastView[1]=0.0f;
@@ -661,12 +678,14 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     SampleUtils::multiplyMatrix(&projectionMatrix.data[0],
                                 &joinedmv.data[0] ,
                                 &modelViewProjection.data[0]);
- 
 
+ 
+    vec.push_back(lastView[0]);
+    vec.push_back(lastView[1]);
+    vec.push_back(lastView[2]);
     
 
-
-    //SampleUtils::printMatrix(joinedmv.data);
+    SampleUtils::printVector(lastView);
 
     glUseProgram(shaderProgramID);
 

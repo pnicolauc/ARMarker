@@ -139,7 +139,7 @@ void mvoDetectAndTrack(){
                     1.0, matrices.mask);
             recoverPose(matrices.essential, frames.curr_features, frames.prev_features, matrices.rotation, matrices.translation, camera.focal, camera.pp, matrices.mask);
 
-            if ((sensors.scale > 0.16) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))
+            if ((sensors.scale > 0.3) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))
                     && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))) {
                 matrices.total_translation = matrices.total_translation + sensors.scale * (matrices.total_rotation * matrices.translation);
                 fixTranslationDirection(); 
@@ -209,7 +209,7 @@ float* rotation) {
                 if(envgl)
                     returnString = returnMessage(envgl,"Tracking");
 
-                //if ((sensors.scale > 0.16) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))
+               // if ((sensors.scale > 0.16) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))
                 //    && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))) {
                     tot_t[0]=(float)matrices.translation.at<double>(0) * sensors.scale;
                     tot_t[1]=(float)matrices.translation.at<double>(1) * sensors.scale;

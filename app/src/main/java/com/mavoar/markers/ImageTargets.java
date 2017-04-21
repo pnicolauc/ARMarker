@@ -583,10 +583,6 @@ public class ImageTargets
                     markerTra[(i*3)+1]=m.getTranslation().get(1);
                     markerTra[(i*3)+2]=m.getTranslation().get(2);
 
-                    markerSca[(i*3)]=m.getScale().get(0);
-                    markerSca[(i*3)+1]=m.getScale().get(1);
-                    markerSca[(i*3)+2]=m.getScale().get(2);
-
                     i++;
                 }
 

@@ -223,7 +223,7 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
                 LOG("FRAME Vuforia %d %d",curr_frame.rows,curr_frame.cols);
 
                 if(noTrackerAvailable && mvo){
-                    mvoTranslation=mvo_processFrame((long)&curr_frame,scale,setMatforVO(resMatrix.data));                  
+                    //mvoTranslation=mvo_processFrame((long)&curr_frame,scale,setMatforVO(resMatrix.data));                  
                 }
                 
 
@@ -612,31 +612,35 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             // pull the camera position and look at vectors from this matrix
             float view[3];            
             Vuforia::Vec3F cameraLookAt(inverseModelView.data[8], inverseModelView.data[9], inverseModelView.data[10]);
+            Vuforia::Vec3F upVector(0,1,0);
+
 
             if(state->getNumTrackableResults() <=1 && mvo){
                 
                 noTrackerAvailable= true;
 
-                lastView[0]+=(cameraLookAt.data[0]+mvoTranslation[0]);
-                lastView[1]+=(cameraLookAt.data[1]+mvoTranslation[1]);
-                lastView[2]+=(cameraLookAt.data[2]+mvoTranslation[2]);
 
+                /*lastView[0]+=(joinedmv.data[0]*mvoTranslation[0])+(joinedmv.data[1]*mvoTranslation[2])+(joinedmv.data[2]*mvoTranslation[1]);
+                lastView[1]+=(joinedmv.data[4]*mvoTranslation[0])+(joinedmv.data[5]*mvoTranslation[2])+(joinedmv.data[6]*mvoTranslation[1]);
+                lastView[2]+=(joinedmv.data[8]*mvoTranslation[0])+(joinedmv.data[9]*mvoTranslation[2])+(joinedmv.data[10]*mvoTranslation[1]);
+*/
                 
-                /*
                 
                 if(scale>0.3){
+                    cameraLookAt = SampleMath::Vec3FNormalize(cameraLookAt);
 
-                    float scaleDown=scale/6;
+                    float scaleDown=scale/2;
                     lastView[0]+=(cameraLookAt.data[0]*-scaleDown);
                     lastView[1]+=(cameraLookAt.data[1]*-scaleDown);
                     lastView[2]+=(cameraLookAt.data[2]*-scaleDown);
-                }*/
+                }
 
 
                 mvoTranslation[0]=0.0f;
                 mvoTranslation[1]=0.0f;
                 mvoTranslation[2]=0.0f;
-            
+                SampleUtils::printVector(mvoTranslation);
+
                 
                 SampleUtils::translatePoseMatrix(lastView[0],lastView[1],lastView[2],
                                             joinedmv.data); 
@@ -685,7 +689,6 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     vec.push_back(lastView[2]);
     
 
-    SampleUtils::printVector(lastView);
 
     glUseProgram(shaderProgramID);
 

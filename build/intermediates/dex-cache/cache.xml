@@ -3,21 +3,21 @@
 
     <item
         is-multidex="false"
-        jar="/home/al/Dropbox/Tese/MAVOAR/openCVLibrary310/build/intermediates/bundles/default/classes.jar"
-        jumboMode="false"
-        optimize="true"
-        revision="25.0.2"
-        sha1="f06d476864a3dd2291535a6c89241c69f3201cf9">
-        <dex dex="/home/al/Dropbox/Tese/MAVOAR/app/build/intermediates/pre-dexed/debug/classes_c88891427dceb126a0f178b613ae9876e614142f.jar" />
-    </item>
-    <item
-        is-multidex="false"
-        jar="/home/al/Dropbox/Tese/MAVOAR/vuforia-build/java/vuforia/Vuforia.jar"
+        jar="C:\MAVOAR\vuforia-build\java\vuforia\Vuforia.jar"
         jumboMode="false"
         optimize="true"
         revision="25.0.2"
         sha1="15f0c848fc592fc94c41fff712b6079d754ecbe2">
-        <dex dex="/home/al/Dropbox/Tese/MAVOAR/app/build/intermediates/pre-dexed/debug/Vuforia_7b136b6debf5a5cf0197289646d47914a4a8819a.jar" />
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\Vuforia_3bc2cea27e624425ebca6f0109d79a616a383b6b.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\MAVOAR\openCVLibrary310\build\intermediates\bundles\default\classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="ccf040d7d3c2e7d56b3c1be67fb78973118b1bfd">
+        <dex dex="C:\MAVOAR\app\build\intermediates\pre-dexed\debug\classes_ca69cca4463fd1f5fe5be1870a9555585ea03ced.jar" />
     </item>
 
 </items>

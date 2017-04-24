@@ -20,6 +20,8 @@ countries.
 #include <Vuforia/Vuforia.h>
 #include <Vuforia/CameraDevice.h>
 #include <Vuforia/Renderer.h>
+#include <Vuforia/ImageTargetBuilder.h>
+
 #include <Vuforia/VideoBackgroundConfig.h>
 #include <Vuforia/Trackable.h>
 #include <Vuforia/TrackableResult.h>
@@ -169,10 +171,12 @@ float* mvoTranslation=new float[3];
 
 Vuforia::Matrix44F resMatrix;
 
-
-
 bool noTrackerAvailable=false;
 
+
+Vuforia::ImageTargetBuilder* builder;
+bool building = false;
+bool scanning = false;
 
 float* setMatforVO(float* mat){
     float* out= new float[9];
@@ -228,6 +232,22 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
                 
 
                 break;
+            }
+        }
+        if (building)
+        {
+            Vuforia::TrackableSource* trackableSource = builder->getTrackableSource ();
+            if (trackableSource != NULL)
+            {
+                Vuforia::ObjectTracker* imageTracker = static_cast<Vuforia::ObjectTracker*>(
+                        trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
+                imageTracker->deactivateDataSet(dataSet);
+    
+                dataSet->createTrackable(trackableSource);
+    
+                imageTracker->activateDataSet(dataSet);
+    
+                building = false;
             }
         }
         if (switchDataSetAsap)
@@ -622,9 +642,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
                 /*lastView[0]+=(joinedmv.data[0]*mvoTranslation[0])+(joinedmv.data[1]*mvoTranslation[2])+(joinedmv.data[2]*mvoTranslation[1]);
                 lastView[1]+=(joinedmv.data[4]*mvoTranslation[0])+(joinedmv.data[5]*mvoTranslation[2])+(joinedmv.data[6]*mvoTranslation[1]);
-                lastView[2]+=(joinedmv.data[8]*mvoTranslation[0])+(joinedmv.data[9]*mvoTranslation[2])+(joinedmv.data[10]*mvoTranslation[1]);
-*/
-                
+                lastView[2]+=(joinedmv.data[8]*mvoTranslation[0])+(joinedmv.data[9]*mvoTranslation[2])+(joinedmv.data[10]*mvoTranslation[1]);            
                 
                 if(scale>0.3){
                     cameraLookAt = SampleMath::Vec3FNormalize(cameraLookAt);
@@ -643,7 +661,14 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
                 
                 SampleUtils::translatePoseMatrix(lastView[0],lastView[1],lastView[2],
-                                            joinedmv.data); 
+                                            joinedmv.data); */
+
+                builder->startScan();
+                scanning = true;
+
+                building = builder->startBuild(name, sceneSizeWidth);
+                builder->stopScan();
+                scanning = false;
             } 
         }
         

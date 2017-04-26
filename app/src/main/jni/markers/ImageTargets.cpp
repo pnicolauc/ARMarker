@@ -177,6 +177,7 @@ bool noTrackerAvailable=false;
 Vuforia::ImageTargetBuilder* builder;
 bool building = false;
 bool scanning = false;
+bool buildTracker=false;
 
 float* setMatforVO(float* mat){
     float* out= new float[9];
@@ -234,13 +235,29 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
                 break;
             }
         }
-        if (building)
+        if (buildTracker)
         {
+            LOG("User Defined Target");
+
+            Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
+            Vuforia::ObjectTracker* imageTracker = static_cast<Vuforia::ObjectTracker*>(
+                        trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
+
+            builder= imageTracker->getImageTargetBuilder();
+            buildTracker=false;
+            builder->startScan();
+            scanning = true;
+
+
+            builder->stopScan();
+            building = builder->build("running", 1.0f);
+
+            scanning = false;
             Vuforia::TrackableSource* trackableSource = builder->getTrackableSource ();
             if (trackableSource != NULL)
             {
-                Vuforia::ObjectTracker* imageTracker = static_cast<Vuforia::ObjectTracker*>(
-                        trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
+                LOG("User Defined Target - trackableSource OK");
+
                 imageTracker->deactivateDataSet(dataSet);
     
                 dataSet->createTrackable(trackableSource);
@@ -595,10 +612,11 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             if(lastMarker)
                 mvo_reset();
             if (strcmp(trackable.getName(), currMarker->name) != 0) {
+                if (strcmp(trackable.getName(), "running")!=0){
+                    LOG("New marker %s", trackable.getName());
 
-                LOG("New marker %s", trackable.getName());
-
-                currMarker = markers[trackable.getName()];
+                    currMarker = markers[trackable.getName()];
+                }
             }
             markerMatrix = modelViewMatrix;
         }
@@ -639,6 +657,10 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                 
                 noTrackerAvailable= true;
 
+                buildTracker=true;
+
+
+
 
                 /*lastView[0]+=(joinedmv.data[0]*mvoTranslation[0])+(joinedmv.data[1]*mvoTranslation[2])+(joinedmv.data[2]*mvoTranslation[1]);
                 lastView[1]+=(joinedmv.data[4]*mvoTranslation[0])+(joinedmv.data[5]*mvoTranslation[2])+(joinedmv.data[6]*mvoTranslation[1]);
@@ -663,12 +685,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                 SampleUtils::translatePoseMatrix(lastView[0],lastView[1],lastView[2],
                                             joinedmv.data); */
 
-                builder->startScan();
-                scanning = true;
-
-                building = builder->startBuild(name, sceneSizeWidth);
-                builder->stopScan();
-                scanning = false;
+                
             } 
         }
         

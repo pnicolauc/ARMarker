@@ -87,6 +87,8 @@ bool isActivityInPortraitMode   = false;
 float kObjectScale;
 
 Vuforia::DataSet* dataSet  = 0;
+Vuforia::DataSet* dataSet2  = 0;
+
 Vuforia::RotationalDeviceTracker* deviceTracker=0;
 
 Vuforia::Matrix44F deviceMatrix;
@@ -179,6 +181,8 @@ bool building = false;
 bool scanning = false;
 bool buildTracker=false;
 
+Vuforia::Trackable* udt;
+
 float* setMatforVO(float* mat){
     float* out= new float[9];
 
@@ -237,35 +241,45 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
         }
         if (buildTracker)
         {
-            LOG("User Defined Target");
-
             Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
             Vuforia::ObjectTracker* imageTracker = static_cast<Vuforia::ObjectTracker*>(
                         trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
-
-            builder= imageTracker->getImageTargetBuilder();
-            buildTracker=false;
-            builder->startScan();
-            scanning = true;
-
-
-            builder->stopScan();
-            building = builder->build("running", 1.0f);
-
-            scanning = false;
+                        
             Vuforia::TrackableSource* trackableSource = builder->getTrackableSource ();
+            
+            dataSet2->destroy(udt);
+
             if (trackableSource != NULL)
             {
-                LOG("User Defined Target - trackableSource OK");
+                Vuforia::DataSet* currentDataSet = imageTracker->getActiveDataSet(0);
+                LOG("User Defined Target - number of targets on dataset %d", currentDataSet->getNumTrackables());
 
-                imageTracker->deactivateDataSet(dataSet);
+                imageTracker->deactivateDataSet(currentDataSet);
+
+                LOG("User Defined Target - dataser limit %d active %d", currentDataSet->hasReachedTrackableLimit(),currentDataSet->isActive());
     
-                dataSet->createTrackable(trackableSource);
+                udt= dataSet2->createTrackable(trackableSource);
     
-                imageTracker->activateDataSet(dataSet);
+                if(udt){
+                    LOG("User Defined Target - trackableSource added");
+                }else{
+                    LOG("User Defined Target - trackableSource not added - null");
+                }
+                imageTracker->activateDataSet(dataSet2);
     
                 building = false;
             }
+            
+
+            buildTracker=false;
+
+            LOG("User Defined Target - quality %d",builder->getFrameQuality());
+
+            building = builder->build("running", 1.0f);
+            LOG("User Defined Target - building %d",building);
+
+            scanning = false;
+            
         }
         if (switchDataSetAsap)
         {
@@ -274,6 +288,8 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
             Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
             Vuforia::ObjectTracker* objectTracker = static_cast<Vuforia::ObjectTracker*>(
                         trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
+
+
             if (objectTracker == 0)
             {
                 LOG("Failed to switch data set.");
@@ -399,6 +415,7 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
     // Initialize the object tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     Vuforia::Tracker* tracker = trackerManager.initTracker(Vuforia::ObjectTracker::getClassType());
+    
     if (tracker == NULL)
     {
         LOG("Failed to initialize ObjectTracker.");
@@ -407,6 +424,10 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
 
     LOG("Successfully initialized ObjectTracker.");
 
+    Vuforia::ObjectTracker* imageTracker = static_cast<Vuforia::ObjectTracker*>(
+                        trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
+    builder= imageTracker->getImageTargetBuilder();
+    builder->startScan();
 
 
     return 1;
@@ -462,6 +483,7 @@ Java_com_mavoar_markers_ImageTargets_loadTrackerData(JNIEnv *env, jobject,jstrin
 
     // Create the data set:
     dataSet=objectTracker->createDataSet();
+    dataSet2=objectTracker->createDataSet();
     if (dataSet == 0)
     {
         LOG("Failed to create a new tracking data.");
@@ -489,6 +511,7 @@ JNIEXPORT int JNICALL
 Java_com_mavoar_markers_ImageTargets_destroyTrackerData(JNIEnv *, jobject)
 {
     LOG("Java_com_mavoar_markers_ImageTargets_destroyTrackerData");
+
 
     // Get the object tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();

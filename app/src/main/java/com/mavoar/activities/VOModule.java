@@ -173,6 +173,7 @@ public class VOModule extends Activity implements CameraBridgeViewBase.CvCameraV
     @Override
     public void onCameraViewStopped() {
         //mRgba.release();
+        saveTrajectory();
     }
 
     private double getScalefromSensorListener(){
@@ -187,4 +188,7 @@ public class VOModule extends Activity implements CameraBridgeViewBase.CvCameraV
      */
     public native void init(float focalLength,float ppx,float ppy);
     public native String processFrame(long matPointer,double scale,float[] rot);
+    public native void saveTrajectory();
+
+
 }

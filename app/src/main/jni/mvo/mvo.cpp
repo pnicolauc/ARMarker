@@ -22,7 +22,43 @@ struct Sensors sensors;
 jstring returnString;
 float* tot_t=new float[3];
 
+std::vector<float> vec2 = std::vector<float>();
+
+
 JNIEnv *envgl;
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_mavoar_activities_VOModule_saveTrajectory(
+                                                        JNIEnv* env, jobject obj)
+{
+    //LOG("Java_com_mavoar_markers_ImageTargets_saveTrajectory");
+
+    FILE* file = fopen("/sdcard/vo_traj.txt","w+");
+
+    int vecSize= vec2.size();
+
+    std::string str;
+
+    int ind=1;
+    for(float i : vec2){
+        std::stringstream ss;
+        ss << i;
+        str.append(ss.str());
+        str.append(" ");
+        if(ind%3==0)
+            str.append("\n");
+
+        ind++;
+    }
+
+    if (file != NULL)
+    {
+        fputs(str.c_str(), file);
+        fflush(file);
+        fclose(file);
+    }
+}
 
 void mvoInit(float focalLength,float ppx,float ppy){
     LOGD("mvo init");
@@ -41,6 +77,9 @@ JNIEXPORT void JNICALL
 Java_com_mavoar_activities_VOModule_init(
         JNIEnv *env,
         jobject /* this */,jfloat focalLength,jfloat ppx,jfloat ppy) {
+    vec2.push_back(0.0f);
+    vec2.push_back(0.0f);
+    vec2.push_back(0.0f);
     mvoInit(focalLength,ppx,ppy);
 }
 
@@ -139,10 +178,14 @@ void mvoDetectAndTrack(){
                     1.0, matrices.mask);
             recoverPose(matrices.essential, frames.curr_features, frames.prev_features, matrices.rotation, matrices.translation, camera.focal, camera.pp, matrices.mask);
 
-            if ((sensors.scale > 0.3) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))
+            if ((sensors.scale > 0.16) && (matrices.translation.at<double>(2) > matrices.translation.at<double>(1))
                     && (matrices.translation.at<double>(2) > matrices.translation.at<double>(0))) {
                 matrices.total_translation = matrices.total_translation + sensors.scale * (matrices.total_rotation * matrices.translation);
                 fixTranslationDirection(); 
+
+                vec2.push_back(matrices.total_translation.at<double>(0));
+                vec2.push_back(matrices.total_translation.at<double>(1));
+                vec2.push_back(matrices.total_translation.at<double>(2));
             }
             frames.prev_features = frames.curr_features;
         }

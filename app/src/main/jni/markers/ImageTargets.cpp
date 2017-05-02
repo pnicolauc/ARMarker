@@ -13,6 +13,8 @@ countries.
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>  
+
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -179,7 +181,6 @@ bool noTrackerAvailable=false;
 Vuforia::ImageTargetBuilder* builder;
 bool building = false;
 bool scanning = false;
-bool buildTracker=false;
 
 Vuforia::Trackable* udt;
 
@@ -202,11 +203,25 @@ float* setMatforVO(float* mat){
     return out;
 }
 
+int udtcount=0;
+
+float lastudttranslation[3];
+
+float translationUDT[3];
+
+
+
+
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
 {
     virtual void Vuforia_onUpdate(Vuforia::State& state)
     {
+        Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
+        Vuforia::ObjectTracker* objectTracker = static_cast<Vuforia::ObjectTracker*>(
+                        trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
+
+
         Vuforia::Frame frame = state.getFrame();
         LOG("images in frame %d.",frame.getNumImages());
 
@@ -239,24 +254,15 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
                 break;
             }
         }
-        if (buildTracker)
+        if (building)
         {
-            Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
-            Vuforia::ObjectTracker* imageTracker = static_cast<Vuforia::ObjectTracker*>(
-                        trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
-                        
+            building = false;
             Vuforia::TrackableSource* trackableSource = builder->getTrackableSource ();
-            
-            dataSet2->destroy(udt);
-
+        
             if (trackableSource != NULL)
             {
-                Vuforia::DataSet* currentDataSet = imageTracker->getActiveDataSet(0);
-                LOG("User Defined Target - number of targets on dataset %d", currentDataSet->getNumTrackables());
-
-                imageTracker->deactivateDataSet(currentDataSet);
-
-                LOG("User Defined Target - dataser limit %d active %d", currentDataSet->hasReachedTrackableLimit(),currentDataSet->isActive());
+                objectTracker->deactivateDataSet(dataSet2);
+                dataSet2->destroy(udt);
     
                 udt= dataSet2->createTrackable(trackableSource);
     
@@ -265,30 +271,30 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
                 }else{
                     LOG("User Defined Target - trackableSource not added - null");
                 }
-                imageTracker->activateDataSet(dataSet2);
-    
-                building = false;
-            }
-            
+                objectTracker->activateDataSet(dataSet2);
 
-            buildTracker=false;
+                LOG("User Defined Target - number of targets on dataset %d", dataSet2->getNumTrackables());
+
+                LOG("User Defined Target - dataset limit %d active %d", dataSet2->hasReachedTrackableLimit(),dataSet2->isActive());
+                udtcount=0;
+            }           
+        }
+        if(scanning){
+            scanning = false;
+
+            lastudttranslation[0]=0.0f;
+            lastudttranslation[1]=0.0f;
+            lastudttranslation[2]=0.0f;
 
             LOG("User Defined Target - quality %d",builder->getFrameQuality());
-
             building = builder->build("running", 1.0f);
             LOG("User Defined Target - building %d",building);
-
-            scanning = false;
-            
         }
+        
         if (switchDataSetAsap)
         {
             switchDataSetAsap = false;
             // Get the object tracker:
-            Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
-            Vuforia::ObjectTracker* objectTracker = static_cast<Vuforia::ObjectTracker*>(
-                        trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
-
 
             if (objectTracker == 0)
             {
@@ -429,6 +435,10 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
     builder= imageTracker->getImageTargetBuilder();
     builder->startScan();
 
+    translationUDT[0]=0.0f;
+    translationUDT[1]=0.0f;
+    translationUDT[2]=0.0f;
+
 
     return 1;
 }
@@ -501,6 +511,11 @@ Java_com_mavoar_markers_ImageTargets_loadTrackerData(JNIEnv *env, jobject,jstrin
         LOG("Failed to activate data set.");
         return 0;
     }
+    if (!objectTracker->activateDataSet(dataSet2))
+    {
+        LOG("Failed to activate data set.");
+        return 0;
+    }
 
     LOG("Successfully loaded and activated data set.");
     return 1;
@@ -544,7 +559,7 @@ Java_com_mavoar_markers_ImageTargets_onVuforiaInitializedNative(JNIEnv *, jobjec
 
     // Comment in to enable tracking of up to 2 targets simultaneously and
     // split the work over multiple frames:
-    // Vuforia::setHint(Vuforia::HINT_MAX_SIMULTANEOUS_IMAGE_TARGETS, 2);
+    Vuforia::setHint(Vuforia::HINT_MAX_SIMULTANEOUS_IMAGE_TARGETS, 2);
 }
 
 
@@ -596,6 +611,10 @@ jfloat z1,jfloat z2,jfloat z3)
 void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& projectionMatrix)
 {
     bool hasMarker=false;
+    bool isUDT=false;
+
+    Vuforia::Matrix44F udtmv;
+
     // Explicitly render the Video Background
     sampleAppRenderer->renderVideoBackground();
     glEnable(GL_DEPTH_TEST);
@@ -631,32 +650,44 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             //deviceMatrix = SampleMath::Matrix44FTranspose(modelViewMatrix);
 
         } else {
-            hasMarker=true;
+            LOG("trackable: %s",trackable.getName());
+            bool istrNewMarker=strcmp(trackable.getName(), currMarker->name) != 0;
+            bool istrUDT=strcmp(trackable.getName(), "running") == 0;
             if(lastMarker)
                 mvo_reset();
-            if (strcmp(trackable.getName(), currMarker->name) != 0) {
-                if (strcmp(trackable.getName(), "running")!=0){
-                    LOG("New marker %s", trackable.getName());
 
+            if (istrNewMarker) {
+                if (!istrUDT){
+                    LOG("New marker %s", trackable.getName());
                     currMarker = markers[trackable.getName()];
-                }
+                    
+                } else if(!hasMarker) isUDT=true;
             }
-            markerMatrix = modelViewMatrix;
+            if(isUDT && istrUDT){
+                udtmv= modelViewMatrix;
+            }
+            else if(!istrUDT){
+                hasMarker=true;
+                isUDT=false;
+                markerMatrix = modelViewMatrix;
+            }
         }
     }
     Vuforia::Matrix44F modelViewProjection;
     Vuforia::Matrix44F joinedmv;
-
     //joinedmv = sensorRotation;
     
-    if(!hasMarker){
-        if(lastMarker){
+    if(!hasMarker| isUDT){
+        if(lastMarker ){
             Vuforia::Matrix44F inverseSensor= SampleMath::Matrix44FTranspose(lastMat);
 
             SampleUtils::multiplyMatrix(sensorRotation.data, 
             inverseSensor.data,resMatrix.data);
 
+            
             joinedmv=markerMatrix;
+            
+            
             if(scale>0.3){
                     cumulative=scale/10.0f;
                     
@@ -667,7 +698,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
            SampleUtils::multiplyMatrix(&resMatrix.data[0],
                                         &joinedmv.data[0],
                                         &joinedmv.data[0]);
-                  // Did we find any trackables this frame?
+            // Did we find any trackables this frame?
 
             Vuforia::Matrix44F inverseModelView = SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(joinedmv));
             // pull the camera position and look at vectors from this matrix
@@ -676,46 +707,62 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             Vuforia::Vec3F upVector(0,1,0);
 
 
-            if(state->getNumTrackableResults() <=1 && mvo){
+            if(isUDT){
+                float udttranslation[3];
+                udttranslation[0]=udtmv.data[12];
+                udttranslation[1]=udtmv.data[13];
+                udttranslation[2]=udtmv.data[14];
+
                 
-                noTrackerAvailable= true;
+                float finaltranslation[3];
+                finaltranslation[0]=udttranslation[0]-lastudttranslation[0];
+                finaltranslation[1]=udttranslation[1]-lastudttranslation[1];
+                finaltranslation[2]=udttranslation[2]-lastudttranslation[2];
 
-                buildTracker=true;
+                lastudttranslation[0]=udttranslation[0];
+                lastudttranslation[1]=udttranslation[1];
+                lastudttranslation[2]=udttranslation[2];
 
-
-
-
-                /*lastView[0]+=(joinedmv.data[0]*mvoTranslation[0])+(joinedmv.data[1]*mvoTranslation[2])+(joinedmv.data[2]*mvoTranslation[1]);
-                lastView[1]+=(joinedmv.data[4]*mvoTranslation[0])+(joinedmv.data[5]*mvoTranslation[2])+(joinedmv.data[6]*mvoTranslation[1]);
-                lastView[2]+=(joinedmv.data[8]*mvoTranslation[0])+(joinedmv.data[9]*mvoTranslation[2])+(joinedmv.data[10]*mvoTranslation[1]);            
-                
-                if(scale>0.3){
-                    cameraLookAt = SampleMath::Vec3FNormalize(cameraLookAt);
-
-                    float scaleDown=scale/2;
-                    lastView[0]+=(cameraLookAt.data[0]*-scaleDown);
-                    lastView[1]+=(cameraLookAt.data[1]*-scaleDown);
-                    lastView[2]+=(cameraLookAt.data[2]*-scaleDown);
+                float udtMag= sqrt(pow(finaltranslation[0],2)+pow(finaltranslation[1],2)+pow(finaltranslation[2],2));
+                float unitTranslation[3];
+                if(udtMag>0){
+                    unitTranslation[0]=finaltranslation[0]/udtMag;
+                    unitTranslation[1]=finaltranslation[1]/udtMag;
+                    unitTranslation[2]=finaltranslation[2]/udtMag;
+                }else{
+                    unitTranslation[0]=0;
+                    unitTranslation[1]=0;
+                    unitTranslation[2]=0;
                 }
+                unitTranslation[0]=unitTranslation[0]*scale;
+                unitTranslation[1]=unitTranslation[1]*scale;
+                unitTranslation[2]=unitTranslation[2]*scale;
 
+                translationUDT[0]+=unitTranslation[0];
+                translationUDT[1]+=unitTranslation[1];
+                translationUDT[2]+=unitTranslation[2];
+                LOG("translation udt: %f %f %f %f",udtMag,translationUDT[0],translationUDT[1],translationUDT[2]);
 
-                mvoTranslation[0]=0.0f;
-                mvoTranslation[1]=0.0f;
-                mvoTranslation[2]=0.0f;
-                SampleUtils::printVector(mvoTranslation);
+                SampleUtils::translatePoseMatrix(translationUDT[0],
+                                        translationUDT[2],
+                                        translationUDT[1],
+                                        joinedmv.data);
+               
+            }
 
-                
-                SampleUtils::translatePoseMatrix(lastView[0],lastView[1],lastView[2],
-                                            joinedmv.data); */
-
-                
+            if(state->getNumTrackableResults() <=1 && mvo && !scanning && !building){
+                if(udtcount==4){
+                    scanning=true;  
+                }
+                udtcount++;
+            }
+            else{
+                udtcount=0;
             } 
         }
         
     } else{
         cumulative=0.0f;
-        joinedmv=markerMatrix;
-
         lastMat=sensorRotation;
         lastMarker=hasMarker;
         noTrackerAvailable=false;
@@ -723,7 +770,9 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         lastView[0]=0.0f;
         lastView[1]=0.0f;
         lastView[2]=0.0f;
-
+        joinedmv=markerMatrix;
+        
+        
     }
 
     SampleUtils::translatePoseMatrix(currMarker->translation[0],
@@ -748,13 +797,10 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                 &joinedmv.data[0] ,
                                 &modelViewProjection.data[0]);
 
- 
     vec.push_back(lastView[0]);
     vec.push_back(lastView[1]);
     vec.push_back(lastView[2]);
     
-
-
     glUseProgram(shaderProgramID);
 
 
@@ -788,14 +834,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     }
 
     SampleUtils::checkGlError("ImageTargets renderFrame");
-
-//
-// }
-
-
-    glDisable(GL_DEPTH_TEST);
-    
-    
+    glDisable(GL_DEPTH_TEST);  
 }
 
 

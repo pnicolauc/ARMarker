@@ -743,12 +743,19 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                 translationUDT[2]+=unitTranslation[2];
                 LOG("translation udt: %f %f %f %f",udtMag,translationUDT[0],translationUDT[1],translationUDT[2]);
 
-                SampleUtils::translatePoseMatrix(translationUDT[0],
-                                        translationUDT[2],
-                                        translationUDT[1],
-                                        joinedmv.data);
-               
+                udtmv.data[12]=translationUDT[0];
+                udtmv.data[13]=translationUDT[1];
+                udtmv.data[14]=translationUDT[2];  
+
             }
+
+            joinedmv=udtmv;           
+
+
+            /*SampleUtils::translatePoseMatrix(/*translationUDT[0]0.0f,
+                                        /*translationUDT[2]0.0f,
+                                        -translationUDT[2],
+                                        joinedmv.data);*/
 
             if(state->getNumTrackableResults() <=1 && mvo && !scanning && !building){
                 if(udtcount==4){
@@ -762,6 +769,10 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         }
         
     } else{
+
+        translationUDT[0]=0.0f;
+        translationUDT[1]=0.0f;
+        translationUDT[2]=0.0f;
         cumulative=0.0f;
         lastMat=sensorRotation;
         lastMarker=hasMarker;

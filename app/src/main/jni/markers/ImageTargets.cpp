@@ -71,146 +71,23 @@ extern "C"
 {
 #endif
 
+struct GPUObjs gpuObjs;
+struct ScreenParams screenParams;
+struct FileSystem fileSystem;
+struct DatasetData datasets;
+struct SensorsData sensorData;
+struct CameraData cameraData;
+struct RotDeviceTracker rotDeviceTracker;
+struct ExtTracking extTracking;
+struct TrackerParams trackerParams;
+struct UserDefTargets userDefTargets;
+struct MVOParams mvoParams;
+struct Trajectory trajectory;
+struct AuxMat auxMat;
 
-unsigned int shaderProgramID    = 0;
-GLint vertexHandle              = 0;
-GLint textureCoordHandle        = 0;
-GLint mvpMatrixHandle           = 0;
-GLint texSampler2DHandle        = 0;
-
-// Screen dimensions:
-int screenWidth                 = 0;
-int screenHeight                = 0;
-
-// Indicates whether screen is in portrait (true) or landscape (false) mode
-bool isActivityInPortraitMode   = false;
-
-// Constants:
-float kObjectScale;
-
-Vuforia::DataSet* dataSet  = 0;
-Vuforia::DataSet* dataSet2  = 0;
-
-Vuforia::RotationalDeviceTracker* deviceTracker=0;
-
-Vuforia::Matrix44F deviceMatrix;
-Vuforia::Matrix44F markerMatrix;
-
-
-SampleAppRenderer* sampleAppRenderer = 0;
-
-bool switchDataSetAsap           = false;
-
-Vuforia::CameraDevice::CAMERA_DIRECTION currentCamera;
-
-const int STONES_AND_CHIPS_DATASET_ID = 0;
-const int TARMAC_DATASET_ID = 1;
-int selectedDataset = STONES_AND_CHIPS_DATASET_ID;
-
-
-static AAssetManager *mgr;
-
-const aiScene* scene;
-
-bool bLoaded;
-
-std::map<std::string,Marker*> markers;
-Marker* currMarker;
-
-
-// global pointer to instance of MyJNIHelper that is used to read from assets
 MyJNIHelper * gHelperObject=NULL;
 
-// global pointer is used in JNI calls to reference to same object of type Cube
-ModelAssimp *gAssimpObject =NULL;
-
-
 using namespace cv;
-Mat curr_frame;
-bool mvo;
-float fl;
-bool init = false;
-
-
-jdouble scale;
-float rotation[9];
-
-Vuforia::Matrix44F modelViewMatrix;
-
-
-bool useDeviceTracker=false;
-bool useExtendedTracking=false;
-
-Vuforia::Matrix44F conv;
-Vuforia::Matrix44F aux;
-
-Vuforia::Matrix44F sensorRotation;
-
-Vuforia::Matrix44F noUpMatrix;
-
-
-bool lastMarker=false;
-Vuforia::Matrix44F lastMat;
-
-float ratio = 8.0f;
-float ppx;
-float ppy;
-
-
-
-float debug=0.0;
-
-float cumulative=0.0f;
-
-float lastView[3];
-
-
-std::vector<float> vec = std::vector<float>();
-
-
-long int framecount=0;
-long int lastframecount=0;
-
-float* mvoTranslation=new float[3];
-
-Vuforia::Matrix44F resMatrix;
-
-bool noTrackerAvailable=false;
-
-
-Vuforia::ImageTargetBuilder* builder;
-bool building = false;
-bool scanning = false;
-
-Vuforia::Trackable* udt;
-
-float* setMatforVO(float* mat){
-    float* out= new float[9];
-
-    out[0]=mat[0];
-    out[1]=mat[1];
-    out[2]=mat[2];
-
-    out[3]=mat[4];
-    out[4]=mat[5];
-    out[5]=mat[6];
-
-    out[6]=mat[8];
-    out[7]=mat[9];
-    out[8]=mat[10];
-
-
-    return out;
-}
-
-int udtcount=0;
-
-float lastudttranslation[3];
-
-float translationUDT[3];
-
-
-
 
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
@@ -225,75 +102,71 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
         Vuforia::Frame frame = state.getFrame();
         LOG("images in frame %d.",frame.getNumImages());
 
-        mvoTranslation[0]=0.0f;
-        mvoTranslation[1]=0.0f;
-        mvoTranslation[2]=0.0f;
+        SampleUtils::zeroesFloatVector3(mvoParams.mvoTranslation);
 
         for (int i = 0; i < frame.getNumImages(); ++i) {
             const Vuforia::Image *image = frame.getImage(i);
             if (image->getFormat() == Vuforia::GRAYSCALE) {
-                if(!init && mvo){
+                if(!mvoParams.init && mvoParams.mvo){
                     LOG("init mvo");
                     const Vuforia::CameraCalibration& cameraCalibration =
                     Vuforia::CameraDevice::getInstance().getCameraCalibration();
 
                     Vuforia::Vec2F focalLength = cameraCalibration.getFocalLength();
 
-                    mvoInit(fl,(float)(image->getHeight()/2),(float)(image->getWidth()/(2)));
-                    init=true;
+                    mvoInit(mvoParams.fl,(float)(image->getHeight()/2),(float)(image->getWidth()/(2)));
+                    mvoParams.init=true;
                 }
                 
-                curr_frame = Mat(image->getHeight(),image->getWidth(),CV_8UC1,(unsigned char *)image->getPixels());
-                LOG("FRAME Vuforia %d %d",curr_frame.rows,curr_frame.cols);
+                cameraData.curr_frame = Mat(image->getHeight(),image->getWidth(),CV_8UC1,(unsigned char *)image->getPixels());
+                LOG("FRAME Vuforia %d %d",cameraData.curr_frame.rows,cameraData.curr_frame.cols);
 
-                if(noTrackerAvailable && mvo){
-                    //mvoTranslation=mvo_processFrame((long)&curr_frame,scale,setMatforVO(resMatrix.data));                  
+                if(trackerParams.noTrackerAvailable && mvoParams.mvo){
+                    //mvoTranslation=mvo_processFrame((long)&curr_frame,scale,resMatrix.data);                  
                 }
                 
 
                 break;
             }
         }
-        if (building)
+        if (userDefTargets.building)
         {
-            building = false;
-            Vuforia::TrackableSource* trackableSource = builder->getTrackableSource ();
+            userDefTargets.building = false;
+            Vuforia::TrackableSource* trackableSource = userDefTargets.builder->getTrackableSource ();
         
             if (trackableSource != NULL)
             {
-                objectTracker->deactivateDataSet(dataSet2);
-                dataSet2->destroy(udt);
+                objectTracker->deactivateDataSet(datasets.udts);
+                datasets.udts->destroy(userDefTargets.udt);
     
-                udt= dataSet2->createTrackable(trackableSource);
+                userDefTargets.udt= datasets.udts->createTrackable(trackableSource);
     
-                if(udt){
+                if(userDefTargets.udt){
                     LOG("User Defined Target - trackableSource added");
                 }else{
                     LOG("User Defined Target - trackableSource not added - null");
                 }
-                objectTracker->activateDataSet(dataSet2);
+                objectTracker->activateDataSet(datasets.udts);
 
-                LOG("User Defined Target - number of targets on dataset %d", dataSet2->getNumTrackables());
+                LOG("User Defined Target - number of targets on dataset %d", datasets.udts->getNumTrackables());
 
-                LOG("User Defined Target - dataset limit %d active %d", dataSet2->hasReachedTrackableLimit(),dataSet2->isActive());
-                udtcount=0;
+                LOG("User Defined Target - dataset limit %d active %d", datasets.udts->hasReachedTrackableLimit(),datasets.udts->isActive());
+                userDefTargets.udtcount=0;
             }           
         }
-        if(scanning){
-            scanning = false;
+        if(userDefTargets.scanning){
+            userDefTargets.scanning = false;
 
-            lastudttranslation[0]=0.0f;
-            lastudttranslation[1]=0.0f;
-            lastudttranslation[2]=0.0f;
+            SampleUtils::zeroesFloatVector3(userDefTargets.lastudttranslation);
 
-            LOG("User Defined Target - quality %d",builder->getFrameQuality());
-            building = builder->build("running", 1.0f);
-            LOG("User Defined Target - building %d",building);
+            LOG("User Defined Target - quality %d",userDefTargets.builder->getFrameQuality());
+            userDefTargets.building = userDefTargets.builder->build("running", 1.0f);
+            LOG("User Defined Target - building %d",userDefTargets.building);
         }
         
-        if (switchDataSetAsap)
+        if (datasets.switchDataSetAsap)
         {
-            switchDataSetAsap = false;
+            datasets.switchDataSetAsap = false;
             // Get the object tracker:
 
             if (objectTracker == 0)
@@ -301,8 +174,8 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
                 LOG("Failed to switch data set.");
                 return;
             }
-            objectTracker->activateDataSet(dataSet);
-            if(useExtendedTracking)
+            objectTracker->activateDataSet(datasets.targets);
+            if(extTracking.useExtendedTracking)
             {
                 Vuforia::DataSet* currentDataSet = objectTracker->getActiveDataSet(0);
                 for (int tIdx = 0; tIdx < currentDataSet->getNumTrackables(); tIdx++)
@@ -322,21 +195,21 @@ JNIEXPORT void JNICALL
 Java_com_mavoar_renderer_GLRenderer_getMat(JNIEnv *, jobject, jlong mat)
 {
     Mat* aux = (Mat*) mat;
-    aux->create(curr_frame.rows, curr_frame.cols, curr_frame.type());
-    memcpy(aux->data, curr_frame.data, aux->step * aux->rows);
+    aux->create(cameraData.curr_frame.rows, cameraData.curr_frame.cols, cameraData.curr_frame.type());
+    memcpy(aux->data, cameraData.curr_frame.data, aux->step * aux->rows);
 }
 
 JNIEXPORT void JNICALL
 Java_com_mavoar_markers_ImageTargets_setActivityPortraitMode(JNIEnv *, jobject, jboolean isPortrait)
 {
-    isActivityInPortraitMode = isPortrait;
+    screenParams.isActivityInPortraitMode = isPortrait;
 }
 
 JNIEXPORT void JNICALL
 Java_com_mavoar_markers_ImageTargets_switchDatasetAsap(JNIEnv* env, jobject, jstring dataset)
 {
-    selectedDataset = 0;
-    switchDataSetAsap = true;
+    datasets.selectedDataset = 0;
+    datasets.switchDataSetAsap = true;
 }
 
 
@@ -347,25 +220,21 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
  jobjectArray markerNames,jfloatArray markerRot,jfloatArray markerTra, jfloatArray markerSca,jboolean jmvo)
 {
 
-    sensorRotation.data[3]=0;
-    sensorRotation.data[7]=0;
-    sensorRotation.data[11]=0;
-    sensorRotation.data[12]=0;
-    sensorRotation.data[13]=0;
-    sensorRotation.data[14]=0;
-    sensorRotation.data[15]=1;
+    trackerParams.sensorRotation.data[3]=0;
+    trackerParams.sensorRotation.data[7]=0;
+    trackerParams.sensorRotation.data[11]=0;
+    trackerParams.sensorRotation.data[12]=0;
+    trackerParams.sensorRotation.data[13]=0;
+    trackerParams.sensorRotation.data[14]=0;
+    trackerParams.sensorRotation.data[15]=1;
 
-    SampleUtils::setRotationMatrix(-90,0,0,1,conv.data);
-
-    SampleUtils::setRotationMatrix(180,0,1,0,aux.data);
-
-    SampleUtils::setIDMatrix(1.0f,1.0f,1.0f,noUpMatrix.data);
-
+    SampleUtils::setRotationMatrix(-90,0,0,1,auxMat.conv.data);
+    SampleUtils::setRotationMatrix(180,0,1,0,auxMat.aux.data);
 
     LOG("Java_com_mavoar_markers_ImageTargets_initTracker");
-    mvo = jmvo;
+    mvoParams.mvo = jmvo;
 
-    kObjectScale=(float)sca;
+    datasets.kObjectScale=(float)sca;
     jfloat* rots = env->GetFloatArrayElements( markerRot,0);
     jfloat* trans = env->GetFloatArrayElements( markerTra,0);
     jfloat* scals = env->GetFloatArrayElements( markerSca,0);
@@ -392,9 +261,9 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
         marker->scale[2]=(float)scals[(a*3)+2];
 
         //std::string str(marker.name);
-        markers[marker->name] = marker;
+        datasets.markers[marker->name] = marker;
 
-        currMarker = marker;
+        datasets.currMarker = marker;
     }
 
     int markerN=(int)markerNum;
@@ -412,9 +281,9 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
     folderCPP = env->GetStringUTFChars(folder, NULL ) ;
 
     gHelperObject = new MyJNIHelper(env, instance, assetManager, pathToInternalDir);
-    gAssimpObject = new ModelAssimp();
+    gpuObjs.gAssimpObject = new ModelAssimp();
 
-    gAssimpObject->PerformGLInits(objCPP,mtlCPP,folderCPP);
+    gpuObjs.gAssimpObject->PerformGLInits(objCPP,mtlCPP,folderCPP);
 
 
 
@@ -432,17 +301,11 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
 
     Vuforia::ObjectTracker* imageTracker = static_cast<Vuforia::ObjectTracker*>(
                         trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
-    builder= imageTracker->getImageTargetBuilder();
-    builder->startScan();
-
-    translationUDT[0]=0.0f;
-    translationUDT[1]=0.0f;
-    translationUDT[2]=0.0f;
-
-
+    userDefTargets.builder= imageTracker->getImageTargetBuilder();
+    userDefTargets.builder->startScan();
+    SampleUtils::zeroesFloatVector3(userDefTargets.translationUDT);
     return 1;
 }
-
 
 JNIEXPORT void JNICALL
 Java_com_mavoar_markers_ImageTargets_deinitTracker(JNIEnv *, jobject)
@@ -453,9 +316,6 @@ Java_com_mavoar_markers_ImageTargets_deinitTracker(JNIEnv *, jobject)
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     trackerManager.deinitTracker(Vuforia::ObjectTracker::getClassType());
 }
-
-
-
 
 JNIEXPORT int JNICALL
 Java_com_mavoar_markers_ImageTargets_loadTrackerData(JNIEnv *env, jobject,jstring xml)
@@ -478,46 +338,43 @@ Java_com_mavoar_markers_ImageTargets_loadTrackerData(JNIEnv *env, jobject,jstrin
         return 0;
     }
 
-
-     deviceTracker = static_cast<Vuforia::RotationalDeviceTracker*>(
-     trackerManager.initTracker(Vuforia:: RotationalDeviceTracker::getClassType()));
-
+    rotDeviceTracker.deviceTracker = static_cast<Vuforia::RotationalDeviceTracker*>(
+    trackerManager.initTracker(Vuforia:: RotationalDeviceTracker::getClassType()));
     // activate pose prediction
-    deviceTracker->setPosePrediction(false);
+    rotDeviceTracker.deviceTracker->setPosePrediction(false);
 
     // activate model correction: default handheld model
-    deviceTracker->setModelCorrection((Vuforia::TransformModel*)deviceTracker->getDefaultHandheldModel());
+    rotDeviceTracker.deviceTracker->setModelCorrection((Vuforia::TransformModel*)rotDeviceTracker.deviceTracker->getDefaultHandheldModel());
     // start the tracker
-    deviceTracker->start();
-
+    rotDeviceTracker.deviceTracker->start();
 
     // Create the data set:
-    dataSet=objectTracker->createDataSet();
-    dataSet2=objectTracker->createDataSet();
-    if (dataSet == 0)
+    datasets.targets=objectTracker->createDataSet();
+    datasets.udts=objectTracker->createDataSet();
+    if (datasets.targets == 0)
     {
         LOG("Failed to create a new tracking data.");
         return 0;
     }
     // Load the data sets:
-    if (!dataSet->load(xmlFile, Vuforia::STORAGE_APPRESOURCE))
+    if (!datasets.targets->load(xmlFile, Vuforia::STORAGE_APPRESOURCE))
     {
         LOG("Failed to load data set.");
         return 0;
     }
     // Activate the data set:
-    if (!objectTracker->activateDataSet(dataSet))
+    if (!objectTracker->activateDataSet(datasets.targets))
     {
         LOG("Failed to activate data set.");
         return 0;
     }
-    if (!objectTracker->activateDataSet(dataSet2))
+    if (!objectTracker->activateDataSet(datasets.udts))
     {
         LOG("Failed to activate data set.");
         return 0;
     }
 
-    LOG("Successfully loaded and activated data set.");
+    LOG("Successfully loaded and activated data sets.");
     return 1;
 }
 
@@ -539,7 +396,7 @@ Java_com_mavoar_markers_ImageTargets_destroyTrackerData(JNIEnv *, jobject)
         return 0;
     }
 
-    if (!objectTracker->deactivateDataSet(dataSet))
+    if (!objectTracker->deactivateDataSet(datasets.targets))
     {
         LOG("Failed to destroy the tracking data set StonesAndChips because the data set "
             "could not be deactivated.");
@@ -570,37 +427,20 @@ jfloat y1,jfloat y2,jfloat y3,
 jfloat z1,jfloat z2,jfloat z3)
 {
     try{
-        
-        scale = sc;
+        sensorData.scale = sc;
+        SampleUtils::setMatrix(x1,x2,x3,y1,y2,y3,z1,z2,z3,sensorData.rotation);   
+        SampleUtils::setRotation33to44(x1,x2,x3,y1,y2,y3,z1,z2,z3,trackerParams.sensorRotation.data);
 
-
-        rotation[0]=x1;
-        rotation[1]=x2;
-        rotation[2]=x3;
-        rotation[3]=y1;
-        rotation[4]=y2;
-        rotation[5]=y3;
-        rotation[6]=z1;
-        rotation[7]=z2;
-        rotation[8]=z3;
-        
-        SampleUtils::setRotation33to44(x1,x2,x3,y1,y2,y3,z1,z2,z3,sensorRotation.data);
-        //sensorRotation = SampleMath::Matrix44FInverse(sensorRotation);
-
-        SampleUtils::multiplyMatrix(&conv.data[0],
-                                        &sensorRotation.data[0] ,
-                                        &sensorRotation.data[0]);
-        SampleUtils::multiplyMatrix(&aux.data[0],
-                                                &sensorRotation.data[0] ,
-                                                &sensorRotation.data[0]);
-
-
+        SampleUtils::multiplyMatrix(auxMat.conv.data,
+                                        trackerParams.sensorRotation.data ,
+                                        trackerParams.sensorRotation.data);
+        SampleUtils::multiplyMatrix(auxMat.aux.data,
+                                                trackerParams.sensorRotation.data ,
+                                                trackerParams.sensorRotation.data);
         // Call renderFrame from SampleAppRenderer which will loop through the rendering primitives
         // views and then it will call renderFrameForView per each of the views available,
         // in this case there is only one view since it is not rendering in stereo mode
-        sampleAppRenderer->renderFrame(
-
-        );
+        gpuObjs.sampleAppRenderer->renderFrame();
     }
     catch(int a){
 
@@ -616,7 +456,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     Vuforia::Matrix44F udtmv;
 
     // Explicitly render the Video Background
-    sampleAppRenderer->renderVideoBackground();
+    gpuObjs.sampleAppRenderer->renderVideoBackground();
     glEnable(GL_DEPTH_TEST);
     
     // We must detect if background reflection is active and adjust the culling direction.
@@ -638,7 +478,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         // Get the trackable:
         const Vuforia::TrackableResult *result = state->getTrackableResult(tIdx);
         const Vuforia::Trackable &trackable = result->getTrackable();
-        modelViewMatrix =
+        trackerParams.modelViewMatrix =
                 Vuforia::Tool::convertPose2GLMatrix(result->getPose());
 
         if (result->isOfType(Vuforia::DeviceTrackableResult::getClassType())) {
@@ -646,56 +486,45 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                     static_cast<const Vuforia::DeviceTrackableResult *>(result);
             // base device matrix that can be used for rendering (will need to be inverted), debug
             //deviceMatrix = modelViewMatrix;
-            deviceMatrix = SampleMath::Matrix44FInverse(modelViewMatrix);
+            rotDeviceTracker.deviceMatrix = SampleMath::Matrix44FInverse(trackerParams.modelViewMatrix);
             //deviceMatrix = SampleMath::Matrix44FTranspose(modelViewMatrix);
 
         } else {
             LOG("trackable: %s",trackable.getName());
-            bool istrNewMarker=strcmp(trackable.getName(), currMarker->name) != 0;
+            bool istrNewMarker=strcmp(trackable.getName(), datasets.currMarker->name) != 0;
             bool istrUDT=strcmp(trackable.getName(), "running") == 0;
-            if(lastMarker)
+            if(trackerParams.lastMarker)
                 mvo_reset();
 
             if (istrNewMarker) {
                 if (!istrUDT){
                     LOG("New marker %s", trackable.getName());
-                    currMarker = markers[trackable.getName()];
+                    datasets.currMarker = datasets.markers[trackable.getName()];
                     
                 } else if(!hasMarker) isUDT=true;
             }
             if(isUDT && istrUDT){
-                udtmv= modelViewMatrix;
+                udtmv= trackerParams.modelViewMatrix;
             }
             else if(!istrUDT){
                 hasMarker=true;
                 isUDT=false;
-                markerMatrix = modelViewMatrix;
+                trackerParams.markerMatrix = trackerParams.modelViewMatrix;
             }
         }
     }
     Vuforia::Matrix44F modelViewProjection;
     Vuforia::Matrix44F joinedmv;
-    //joinedmv = sensorRotation;
     
     if(!hasMarker| isUDT){
-        if(lastMarker ){
-            Vuforia::Matrix44F inverseSensor= SampleMath::Matrix44FTranspose(lastMat);
-
-            SampleUtils::multiplyMatrix(sensorRotation.data, 
-            inverseSensor.data,resMatrix.data);
-
-            
-            joinedmv=markerMatrix;
-            
-            
-            if(scale>0.3){
-                    cumulative=scale/10.0f;
-                    
-            }else cumulative=0.0f;
+        if(trackerParams.lastMarker ){
+            Vuforia::Matrix44F inverseSensor= SampleMath::Matrix44FTranspose(trackerParams.lastMat);
+            SampleUtils::multiplyMatrix(trackerParams.sensorRotation.data, 
+            inverseSensor.data,trackerParams.resMatrix.data);
+            joinedmv=trackerParams.markerMatrix;
             Vuforia::Matrix44F mvo_tr;
             SampleUtils::setIdentity(mvo_tr.data);
-            
-           SampleUtils::multiplyMatrix(&resMatrix.data[0],
+            SampleUtils::multiplyMatrix(trackerParams.resMatrix.data,
                                         &joinedmv.data[0],
                                         &joinedmv.data[0]);
             // Did we find any trackables this frame?
@@ -715,13 +544,13 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
                 
                 float finaltranslation[3];
-                finaltranslation[0]=udttranslation[0]-lastudttranslation[0];
-                finaltranslation[1]=udttranslation[1]-lastudttranslation[1];
-                finaltranslation[2]=udttranslation[2]-lastudttranslation[2];
+                finaltranslation[0]=udttranslation[0]-userDefTargets.lastudttranslation[0];
+                finaltranslation[1]=udttranslation[1]-userDefTargets.lastudttranslation[1];
+                finaltranslation[2]=udttranslation[2]-userDefTargets.lastudttranslation[2];
 
-                lastudttranslation[0]=udttranslation[0];
-                lastudttranslation[1]=udttranslation[1];
-                lastudttranslation[2]=udttranslation[2];
+                userDefTargets.lastudttranslation[0]=udttranslation[0];
+                userDefTargets.lastudttranslation[1]=udttranslation[1];
+                userDefTargets.lastudttranslation[2]=udttranslation[2];
 
                 float udtMag= sqrt(pow(finaltranslation[0],2)+pow(finaltranslation[1],2)+pow(finaltranslation[2],2));
                 float unitTranslation[3];
@@ -734,73 +563,76 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                     unitTranslation[1]=0;
                     unitTranslation[2]=0;
                 }
-                unitTranslation[0]=unitTranslation[0]*scale;
-                unitTranslation[1]=unitTranslation[1]*scale;
-                unitTranslation[2]=unitTranslation[2]*scale;
+                unitTranslation[0]=unitTranslation[0]*sensorData.scale;
+                unitTranslation[1]=unitTranslation[1]*sensorData.scale;
+                unitTranslation[2]=unitTranslation[2]*sensorData.scale;
 
-                translationUDT[0]+=unitTranslation[0];
-                translationUDT[1]+=unitTranslation[1];
-                translationUDT[2]+=unitTranslation[2];
-                LOG("translation udt: %f %f %f %f",udtMag,translationUDT[0],translationUDT[1],translationUDT[2]);
+                if(sensorData.scale>0.09){
+                    userDefTargets.translationUDT[0]+=unitTranslation[0];
+                    userDefTargets.translationUDT[1]+=unitTranslation[1];
+                    userDefTargets.translationUDT[2]+=unitTranslation[2];
+                }
+                LOG("translation udt: %f %f %f %f",udtMag,userDefTargets.translationUDT[0],userDefTargets.translationUDT[1],userDefTargets.translationUDT[2]);
 
-                udtmv.data[12]=translationUDT[0];
-                udtmv.data[13]=translationUDT[1];
-                udtmv.data[14]=translationUDT[2];  
+                //SampleUtils::setIdentity(udtmv.data);
+
+                Vuforia::Matrix44F inverseUDT=SampleMath::Matrix44FTranspose(udtmv);
+                inverseUDT.data[3]=0;
+                inverseUDT.data[7]=0;
+                inverseUDT.data[11]=0;
+
+                udtmv.data[12]=userDefTargets.translationUDT[0];
+                udtmv.data[13]=userDefTargets.translationUDT[1];
+                udtmv.data[14]=userDefTargets.translationUDT[2];
+
+                SampleUtils::multiplyMatrix(udtmv.data,
+                                        inverseUDT.data,
+                                        udtmv.data);
 
             }
 
-            joinedmv=udtmv;           
+        //if(sensorData.scale>0.1){
+            SampleUtils::translatePoseMatrix(-udtmv.data[13],
+                                        -udtmv.data[12],
+                                        -udtmv.data[14],
+                                        joinedmv.data);
+        //}
 
-
-            /*SampleUtils::translatePoseMatrix(/*translationUDT[0]0.0f,
-                                        /*translationUDT[2]0.0f,
-                                        -translationUDT[2],
-                                        joinedmv.data);*/
-
-            if(state->getNumTrackableResults() <=1 && mvo && !scanning && !building){
-                if(udtcount==4){
-                    scanning=true;  
+            if(state->getNumTrackableResults() <=1 && mvoParams.mvo && !userDefTargets.scanning && !userDefTargets.building){
+                if(userDefTargets.udtcount==4){
+                    userDefTargets.scanning=true;  
                 }
-                udtcount++;
+                userDefTargets.udtcount++;
             }
             else{
-                udtcount=0;
+                userDefTargets.udtcount=0;
             } 
         }
         
     } else{
+        SampleUtils::zeroesFloatVector3(userDefTargets.translationUDT);
 
-        translationUDT[0]=0.0f;
-        translationUDT[1]=0.0f;
-        translationUDT[2]=0.0f;
-        cumulative=0.0f;
-        lastMat=sensorRotation;
-        lastMarker=hasMarker;
-        noTrackerAvailable=false;
-
-        lastView[0]=0.0f;
-        lastView[1]=0.0f;
-        lastView[2]=0.0f;
-        joinedmv=markerMatrix;
-        
-        
+        trackerParams.lastMat=trackerParams.sensorRotation;
+        trackerParams.lastMarker=hasMarker;
+        trackerParams.noTrackerAvailable=false;
+        joinedmv=trackerParams.markerMatrix;        
     }
 
-    SampleUtils::translatePoseMatrix(currMarker->translation[0],
-                                    currMarker->translation[1],
-                                    currMarker->translation[2],
+    SampleUtils::translatePoseMatrix(datasets.currMarker->translation[0],
+                                    datasets.currMarker->translation[1],
+                                    datasets.currMarker->translation[2],
                                         &joinedmv.data[0]);
 
-    SampleUtils::rotatePoseMatrix(currMarker->rotation[0],
-                                    currMarker->rotation[1],
-                                    currMarker->rotation[2] ,
-                                    currMarker->rotation[3],
+    SampleUtils::rotatePoseMatrix(datasets.currMarker->rotation[0],
+                                    datasets.currMarker->rotation[1],
+                                    datasets.currMarker->rotation[2] ,
+                                    datasets.currMarker->rotation[3],
                                     &joinedmv.data[0]);
 
 
-    SampleUtils::scalePoseMatrix(kObjectScale,
-                                kObjectScale,
-                                kObjectScale,
+    SampleUtils::scalePoseMatrix(datasets.kObjectScale,
+                                datasets.kObjectScale,
+                                datasets.kObjectScale,
                                 &joinedmv.data[0]);
 
 
@@ -808,14 +640,10 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                 &joinedmv.data[0] ,
                                 &modelViewProjection.data[0]);
 
-    vec.push_back(lastView[0]);
-    vec.push_back(lastView[1]);
-    vec.push_back(lastView[2]);
-    
-    glUseProgram(shaderProgramID);
+    glUseProgram(gpuObjs.shaderProgramID);
 
 
-    std::vector<MeshInfo*> modelMeshes= gAssimpObject->getMeshes();
+    std::vector<MeshInfo*> modelMeshes= gpuObjs.gAssimpObject->getMeshes();
     unsigned int numberOfLoadedMeshes = modelMeshes.size();
 
     // render all meshes
@@ -823,19 +651,19 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     if (modelMeshes[n]->mTextureID) {
         glActiveTexture(GL_TEXTURE0);
 
-        glUniform1i(texSampler2DHandle, 0 );
+        glUniform1i(gpuObjs.texSampler2DHandle, 0 );
 
         glBindTexture( GL_TEXTURE_2D, modelMeshes[n]->mTextureID);
 
         }
-        glVertexAttribPointer(vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
+        glVertexAttribPointer(gpuObjs.vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
                             (const GLvoid*)  (modelMeshes[n]->vertices));
-        glVertexAttribPointer(textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,
+        glVertexAttribPointer(gpuObjs.textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,
                             (const GLvoid*) (modelMeshes[n]->texCoords));
 
-        glEnableVertexAttribArray(vertexHandle);
-        glEnableVertexAttribArray(textureCoordHandle);
-        glUniformMatrix4fv(mvpMatrixHandle, 1, GL_FALSE,
+        glEnableVertexAttribArray(gpuObjs.vertexHandle);
+        glEnableVertexAttribArray(gpuObjs.textureCoordHandle);
+        glUniformMatrix4fv(gpuObjs.mvpMatrixHandle, 1, GL_FALSE,
         (GLfloat*)&modelViewProjection.data[0] );
 
         glDrawElements(GL_TRIANGLES,  modelMeshes[n]->nIndices, GL_UNSIGNED_SHORT,
@@ -864,38 +692,38 @@ configureVideoBackground()
     config.mPosition.data[0] = 0.0f;
     config.mPosition.data[1] = 0.0f;
 
-    if (isActivityInPortraitMode)
+    if (screenParams.isActivityInPortraitMode)
     {
         //LOG("configureVideoBackground PORTRAIT");
         config.mSize.data[0] = videoMode.mHeight
-                                * (screenHeight / (float)videoMode.mWidth);
-        config.mSize.data[1] = screenHeight;
+                                * (screenParams.screenHeight / (float)videoMode.mWidth);
+        config.mSize.data[1] = screenParams.screenHeight;
 
-        if(config.mSize.data[0] < screenWidth)
+        if(config.mSize.data[0] < screenParams.screenWidth)
         {
             LOG("Correcting rendering background size to handle missmatch between screen and video aspect ratios.");
-            config.mSize.data[0] = screenWidth;
-            config.mSize.data[1] = screenWidth *
+            config.mSize.data[0] = screenParams.screenWidth;
+            config.mSize.data[1] = screenParams.screenWidth *
                               (videoMode.mWidth / (float)videoMode.mHeight);
         }
     }
     else
     {
         //LOG("configureVideoBackground LANDSCAPE");
-        config.mSize.data[0] = screenWidth;
+        config.mSize.data[0] = screenParams.screenWidth;
         config.mSize.data[1] = videoMode.mHeight
-                            * (screenWidth / (float)videoMode.mWidth);
+                            * (screenParams.screenWidth / (float)videoMode.mWidth);
 
-        if(config.mSize.data[1] < screenHeight)
+        if(config.mSize.data[1] < screenParams.screenHeight)
         {
             LOG("Correcting rendering background size to handle missmatch between screen and video aspect ratios.");
-            config.mSize.data[0] = screenHeight
+            config.mSize.data[0] = screenParams.screenHeight
                                 * (videoMode.mWidth / (float)videoMode.mHeight);
-            config.mSize.data[1] = screenHeight;
+            config.mSize.data[1] = screenParams.screenHeight;
         }
     }
 
-    LOG("Configure Video Background : Video (%d,%d), Screen (%d,%d), mSize (%d,%d)", videoMode.mWidth, videoMode.mHeight, screenWidth, screenHeight, config.mSize.data[0], config.mSize.data[1]);
+    LOG("Configure Video Background : Video (%d,%d), Screen (%d,%d), mSize (%d,%d)", videoMode.mWidth, videoMode.mHeight, screenParams.screenWidth, screenParams.screenHeight, config.mSize.data[0], config.mSize.data[1]);
 
     // Set the config:
     Vuforia::Renderer::getInstance().setVideoBackgroundConfig(config);
@@ -909,10 +737,10 @@ Java_com_mavoar_markers_ImageTargets_initApplicationNative(
     LOG("Java_com_mavoar_markers_ImageTargets_initApplicationNative");
 
     // Store screen dimensions
-    screenWidth = width;
-    screenHeight = height;
+    screenParams.screenWidth = width;
+    screenParams.screenHeight = height;
 
-    sampleAppRenderer = new SampleAppRenderer();
+    gpuObjs.sampleAppRenderer = new SampleAppRenderer();
 
     // Handle to the activity class:
     jclass activityClass = env->GetObjectClass(obj);
@@ -920,17 +748,16 @@ Java_com_mavoar_markers_ImageTargets_initApplicationNative(
     LOG("Java_com_mavoar_markers_ImageTargets_initApplicationNative finished");
 }
 
-
 JNIEXPORT void JNICALL
 Java_com_mavoar_markers_ImageTargets_deinitApplicationNative(
                                                         JNIEnv* env, jobject obj)
 {
     LOG("Java_com_mavoar_markers_ImageTargets_deinitApplicationNative");
 
-    useExtendedTracking = false;
+    extTracking.useExtendedTracking = false;
 
-    delete sampleAppRenderer;
-    sampleAppRenderer = NULL;
+    delete gpuObjs.sampleAppRenderer;
+    gpuObjs.sampleAppRenderer = NULL;
 }
 
 JNIEXPORT void JNICALL
@@ -941,12 +768,12 @@ Java_com_mavoar_markers_ImageTargets_saveTrajectory(
 
     FILE* file = fopen("/sdcard/mavoar_traj.txt","w+");
 
-    int vecSize= vec.size();
+    int vecSize= trajectory.vec.size();
 
     std::string str;
 
     int ind=1;
-    for(float i : vec){
+    for(float i : trajectory.vec){
         std::stringstream ss;
         ss << i;
         str.append(ss.str());
@@ -965,17 +792,16 @@ Java_com_mavoar_markers_ImageTargets_saveTrajectory(
     }
 }
 
-
 JNIEXPORT void JNICALL
 Java_com_mavoar_markers_ImageTargets_startCamera(JNIEnv *,
                                                                          jobject, jint camera)
 {
     LOG("Java_com_mavoar_markers_ImageTargets_startCamera");
 
-    currentCamera = static_cast<Vuforia::CameraDevice::CAMERA_DIRECTION> (camera);
+    cameraData.currentCamera = static_cast<Vuforia::CameraDevice::CAMERA_DIRECTION> (camera);
 
     // Initialize the camera:
-    if (!Vuforia::CameraDevice::getInstance().init(currentCamera))
+    if (!Vuforia::CameraDevice::getInstance().init(cameraData.currentCamera))
         return;
 
     // Select the default camera mode:
@@ -992,15 +818,6 @@ Java_com_mavoar_markers_ImageTargets_startCamera(JNIEnv *,
 
     Vuforia::setFrameFormat(Vuforia::GRAYSCALE, true);
 
-    // Uncomment to enable flash
-    //if(Vuforia::CameraDevice::getInstance().setFlashTorchMode(true))
-    //    LOG("IMAGE TARGETS : enabled torch");
-
-    // Uncomment to enable infinity focus mode, or any other supported focus mode
-    // See CameraDevice.h for supported focus modes
-    //if(Vuforia::CameraDevice::getInstance().setFocusMode(Vuforia::CameraDevice::FOCUS_MODE_INFINITY))
-    //    LOG("IMAGE TARGETS : enabled infinity focus");
-
     // Start the tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     Vuforia::Tracker* objectTracker = trackerManager.getTracker(Vuforia::ObjectTracker::getClassType());
@@ -1011,7 +828,6 @@ Java_com_mavoar_markers_ImageTargets_startCamera(JNIEnv *,
 
     }
 }
-
 
 JNIEXPORT void JNICALL
 Java_com_mavoar_markers_ImageTargets_stopCamera(JNIEnv *, jobject)
@@ -1034,7 +850,7 @@ Java_com_mavoar_renderer_GLRenderer_updateRenderingPrimitives(JNIEnv *, jobject)
 {
     LOG("Java_com_mavoar_markers_GLRenderer_updateRenderingPrimitives");
 
-    sampleAppRenderer->updateRenderingPrimitives();
+    gpuObjs.sampleAppRenderer->updateRenderingPrimitives();
 }
 
 // ----------------------------------------------------------------------------
@@ -1083,7 +899,6 @@ Java_com_mavoar_markers_ImageTargets_setFocusMode(JNIEnv*, jobject, jint mode)
     return Vuforia::CameraDevice::getInstance().setFocusMode(focusMode) ? JNI_TRUE : JNI_FALSE;
 }
 
-
 JNIEXPORT jboolean JNICALL
 Java_com_mavoar_markers_ImageTargets_startExtendedTracking(JNIEnv*, jobject)
 {
@@ -1102,7 +917,7 @@ Java_com_mavoar_markers_ImageTargets_startExtendedTracking(JNIEnv*, jobject)
             return JNI_FALSE;
     }
 
-    useExtendedTracking = true;
+    extTracking.useExtendedTracking = true;
     //trackerManager = Vuforia::TrackerManager::getInstance();
     //objectTracker = trackerManager.getTracker(Vuforia::ObjectTracker::getClassType());
 
@@ -1111,7 +926,6 @@ Java_com_mavoar_markers_ImageTargets_startExtendedTracking(JNIEnv*, jobject)
 
     return JNI_TRUE;
 }
-
 
 JNIEXPORT jboolean JNICALL
 Java_com_mavoar_markers_ImageTargets_stopExtendedTracking(JNIEnv*, jobject)
@@ -1131,10 +945,9 @@ Java_com_mavoar_markers_ImageTargets_stopExtendedTracking(JNIEnv*, jobject)
             return JNI_FALSE;
     }
 
-    useExtendedTracking = false;
+    extTracking.useExtendedTracking = false;
     return JNI_TRUE;
 }
-
 
 JNIEXPORT void JNICALL
 Java_com_mavoar_renderer_GLRenderer_initRendering(
@@ -1145,9 +958,9 @@ Java_com_mavoar_renderer_GLRenderer_initRendering(
     // Define clear color
     glClearColor(0.0f, 0.0f, 0.0f, Vuforia::requiresAlpha() ? 0.0f : 1.0f);
 
-    std::vector<cv::Mat> textures= gAssimpObject->getTextures();
+    std::vector<cv::Mat> textures= gpuObjs.gAssimpObject->getTextures();
 
-    std::vector<MeshInfo*> modelMeshes= gAssimpObject->getMeshes();
+    std::vector<MeshInfo*> modelMeshes= gpuObjs.gAssimpObject->getMeshes();
     unsigned int numberOfLoadedMeshes = modelMeshes.size();
 
     // Now generate the OpenGL texture objects and add settings
@@ -1171,21 +984,17 @@ Java_com_mavoar_renderer_GLRenderer_initRendering(
         else{break;}
 
     }
-
-
-
-    shaderProgramID     = SampleUtils::createProgramFromBuffer(cubeMeshVertexShader,
+    gpuObjs.shaderProgramID     = SampleUtils::createProgramFromBuffer(cubeMeshVertexShader,
                                                             cubeFragmentShader);
-
-    vertexHandle        = glGetAttribLocation(shaderProgramID,
+    gpuObjs.vertexHandle        = glGetAttribLocation(gpuObjs.shaderProgramID,
                                                 "vertexPosition");
-    textureCoordHandle  = glGetAttribLocation(shaderProgramID,
+    gpuObjs.textureCoordHandle  = glGetAttribLocation(gpuObjs.shaderProgramID,
                                                 "vertexTexCoord");
-    mvpMatrixHandle     = glGetUniformLocation(shaderProgramID,
+    gpuObjs.mvpMatrixHandle     = glGetUniformLocation(gpuObjs.shaderProgramID,
                                                 "modelViewProjectionMatrix");
-    texSampler2DHandle  = glGetUniformLocation(shaderProgramID,
+    gpuObjs.texSampler2DHandle  = glGetUniformLocation(gpuObjs.shaderProgramID,
                                                 "texSampler2D");
-    sampleAppRenderer->initRendering();
+    gpuObjs.sampleAppRenderer->initRendering();
 }
 
 
@@ -1194,15 +1003,13 @@ Java_com_mavoar_renderer_GLRenderer_updateRendering(
                         JNIEnv* env, jobject obj, jint width, jint height)
 {
     LOG("Java_com_mavoar_markers_GLRenderer_updateRendering");
-
     // Update screen dimensions
-    screenWidth = width;
-    screenHeight = height;
+    screenParams.screenWidth = width;
+    screenParams.screenHeight = height;
 
     // Reconfigure the video background
     configureVideoBackground();
 }
-
 
 #ifdef __cplusplus
 }

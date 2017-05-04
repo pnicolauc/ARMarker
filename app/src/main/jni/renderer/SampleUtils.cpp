@@ -29,6 +29,28 @@ SampleUtils::printMatrix(const float* mat)
         LOG("%7.3f %7.3f %7.3f %7.3f", mat[0], mat[1], mat[2], mat[3]);
 }
 
+void
+SampleUtils::zeroesFloatVector3(float* vec)
+{
+    vec[0]=0.0f;
+    vec[1]=0.0f;
+    vec[2]=0.0f;
+}
+
+void
+SampleUtils::setMatrix(float x1,float x2,float x3,float y1,float y2,float y3,float z1,float z2,float z3,
+ float* mat)
+{
+    mat[0]=x1;
+    mat[1]=x2;
+    mat[2]=x3;
+    mat[3]=y1;
+    mat[4]=y2;
+    mat[5]=y3;
+    mat[6]=z1;
+    mat[7]=z2;
+    mat[8]=z3;
+}
 void SampleUtils::setIDMatrix(float x,float y,float z,float* mat){
     mat[0]  = x;
     mat[1]  = 0.0f;

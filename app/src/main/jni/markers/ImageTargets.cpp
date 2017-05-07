@@ -98,7 +98,6 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
         Vuforia::ObjectTracker* objectTracker = static_cast<Vuforia::ObjectTracker*>(
                         trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
 
-
         Vuforia::Frame frame = state.getFrame();
         LOG("images in frame %d.",frame.getNumImages());
 
@@ -121,9 +120,11 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
                 cameraData.curr_frame = Mat(image->getHeight(),image->getWidth(),CV_8UC1,(unsigned char *)image->getPixels());
                 LOG("FRAME Vuforia %d %d",cameraData.curr_frame.rows,cameraData.curr_frame.cols);
 
-                if(trackerParams.noTrackerAvailable && mvoParams.mvo){
-                    //mvoTranslation=mvo_processFrame((long)&curr_frame,scale,resMatrix.data);                  
-                }
+                //if(trackerParams.noTrackerAvailable && mvoParams.mvo){
+                    //mvoParams.mvoTranslation=mvo_processFrame((long)&(cameraData.curr_frame),sensorData.scale, trackerParams.resMatrix.data);                  
+                    //LOG("mvoTranslation - %f %f %f",mvoParams.mvoTranslation[0],mvoParams.mvoTranslation[1],mvoParams.mvoTranslation[2]);
+
+                //}
                 
 
                 break;
@@ -493,10 +494,10 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             LOG("trackable: %s",trackable.getName());
             bool istrNewMarker=strcmp(trackable.getName(), datasets.currMarker->name) != 0;
             bool istrUDT=strcmp(trackable.getName(), "running") == 0;
-            if(trackerParams.lastMarker)
-                mvo_reset();
+                
 
             if (istrNewMarker) {
+                //mvo_reset();
                 if (!istrUDT){
                     LOG("New marker %s", trackable.getName());
                     datasets.currMarker = datasets.markers[trackable.getName()];
@@ -571,6 +572,11 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                     userDefTargets.translationUDT[0]+=unitTranslation[0];
                     userDefTargets.translationUDT[1]+=unitTranslation[1];
                     userDefTargets.translationUDT[2]+=unitTranslation[2];
+
+                    trajectory.vec.push_back(userDefTargets.translationUDT[0]);
+                    trajectory.vec.push_back(userDefTargets.translationUDT[1]);
+                    trajectory.vec.push_back(userDefTargets.translationUDT[2]);
+
                 }
                 LOG("translation udt: %f %f %f %f",udtMag,userDefTargets.translationUDT[0],userDefTargets.translationUDT[1],userDefTargets.translationUDT[2]);
 
@@ -764,11 +770,11 @@ JNIEXPORT void JNICALL
 Java_com_mavoar_markers_ImageTargets_saveTrajectory(
                                                         JNIEnv* env, jobject obj)
 {
-    LOG("Java_com_mavoar_markers_ImageTargets_saveTrajectory");
-
     FILE* file = fopen("/sdcard/mavoar_traj.txt","w+");
 
     int vecSize= trajectory.vec.size();
+
+    LOG("Java_com_mavoar_markers_ImageTargets_saveTrajectory %d points",vecSize);
 
     std::string str;
 

@@ -115,6 +115,7 @@ void fixTranslationDirection(){
 }
 
 void mvo_reset(){
+    LOGD("resetting mvo.");
     if(matrices.total_translation.size().width!=0){
         matrices.total_translation.at<double>(0)= 0.0f;
         matrices.total_translation.at<double>(1)= 0.0f;
@@ -155,6 +156,7 @@ void initialFix(){
         }
 
         if(points2.size()==0 | points1.size()==0){
+            LOGD("can't find features.");
             stage=WAITING_FIRST_FRAME;
         }
     }
@@ -173,6 +175,7 @@ void mvoDetectAndTrack(){
         featureTracking(frames.prev_frame, frames.curr_frame, frames.prev_features, frames.curr_features, status);
 
         if(frames.curr_features.size()>0){
+            LOGD("current features present.");
 
             matrices.essential = findEssentialMat(frames.curr_features, frames.prev_features, camera.focal, camera.pp, RANSAC, 0.999,
                     1.0, matrices.mask);
@@ -186,10 +189,14 @@ void mvoDetectAndTrack(){
                 vec2.push_back(matrices.total_translation.at<double>(0));
                 vec2.push_back(matrices.total_translation.at<double>(1));
                 vec2.push_back(matrices.total_translation.at<double>(2));
+            }else{
+                LOGD("Movement scale or direction does not meet requirements.");
             }
             frames.prev_features = frames.curr_features;
         }
         else{
+            LOGD("No current features.resetting stages.");
+
             stage=WAITING_FIRST_FRAME;
         }
     }

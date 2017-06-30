@@ -3,6 +3,24 @@
 
     <item
         is-multidex="false"
+        jar="/root/.android/build-cache/ed0e4a6efeb9447988b0ad68909f0b669f4acace/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="ee394a892dd21c03a528139c1e8d4e0e1264ac84">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/classes_8af8cd5a332341df330b3e9777c08a7960e75a92.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/root/.android/build-cache/4a22060999463fc6f6492399165504e4ef4c9d89/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="e820b7be8c035dd522da4bc822e8a76c8e27921a">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/classes_54f17c15aa63c3896f44f930cd98a013bb4c6b0d.jar" />
+    </item>
+    <item
+        is-multidex="false"
         jar="/home/al/Dropbox/Tese/MAVOAR/openCVLibrary310/build/intermediates/bundles/default/classes.jar"
         jumboMode="false"
         optimize="true"
@@ -12,12 +30,129 @@
     </item>
     <item
         is-multidex="false"
+        jar="/root/.android/build-cache/2427abcc71b49f984136fcfe95a73b335999f609/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="cb454b52545859ed2f24a6c01366805b0fa04b22">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/classes_5b8ae7b78ebb126bdbd39ff16ec5e5bfe6b116de.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/root/.gradle/caches/modules-2/files-2.1/com.google.code.gson/gson/2.2.4/a60a5e993c98c864010053cb901b7eab25306568/gson-2.2.4.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="a60a5e993c98c864010053cb901b7eab25306568">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/gson-2.2.4_b0e547327b9ef3763a4206e03dc15fe18b7e9fff.jar" />
+    </item>
+    <item
+        is-multidex="false"
         jar="/home/al/Dropbox/Tese/MAVOAR/vuforia-build/java/vuforia/Vuforia.jar"
         jumboMode="false"
         optimize="true"
         revision="25.0.2"
         sha1="15f0c848fc592fc94c41fff712b6079d754ecbe2">
         <dex dex="/home/al/Dropbox/Tese/MAVOAR/app/build/intermediates/pre-dexed/debug/Vuforia_7b136b6debf5a5cf0197289646d47914a4a8819a.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/root/.android/build-cache/c6707f2419734c0ad41017ea7ba233bf519a1b42/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="810f41e5b7fd99f196ebeabe865ba2c54e7e76dc">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/classes_aa22478bfe8205c43e0471f18bbf7c3754c53f08.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/root/.android/build-cache/40b3cbff0d14ca06bd78f48e05da5258135d39d6/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="d7c42c80f6509b9ea4db28ca7859ffae08ec5741">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/classes_458d982a9500ddb61cfaf5a54451421023fce1b1.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/root/.android/build-cache/160c231554d993e9443ec29658d06f918dafed28/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="44ee06abb66da30f5855e6bf54574e64cdcd982a">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/classes_ced6b8083d0a14c184f3fee72ebb0d22443b35f6.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/al/Documents/Tese/ARMarker/vuforia-build/java/vuforia/Vuforia.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="15f0c848fc592fc94c41fff712b6079d754ecbe2">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/Vuforia_669e53158b693e404dc5adf25817954b07316d2c.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/root/.android/build-cache/614058c5c9319c405d95a46e0e3726fcce157082/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="702d339bc0a81d21354cd7e2cf2b67225fa4a16c">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/classes_6f3ff7da1538560b27e8ad382be479681b9ffecd.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/root/.android/build-cache/e1d93a26788f8b5c9cd3959138acd36aec3cbc40/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="67eb33110dbacb46a48175b08ae0c96761d2c17d">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/classes_494d20b4e07bf38ec9735ba2e9fd92a09f602ee3.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/root/.android/build-cache/cf54ff78ce30cd1c223b5e632fef5c34caf8e015/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="8fe8a8f77d651982ce5e18f6187dc4daf914ac57">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/classes_84ab597ec701a6d6d44073ab8677522441a4428c.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/root/.android/build-cache/ea67a77ed0ed11c4fc1ce33fa913fc2e5c9c98a1/output/jars/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="fa0446a14ed5dd3725047d6399ffea771a564b30">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/classes_528e1bb662b74d5f9e7d06041cc401a76606b8f8.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/al/Documents/Tese/ARMarker/openCVLibrary310/build/intermediates/bundles/default/classes.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="f06d476864a3dd2291535a6c89241c69f3201cf9">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/classes_daeb649d1291567a30a632655e89f446cb248b81.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/al/Android/Sdk/extras/m2repository/com/android/support/constraint/constraint-layout-solver/1.0.2/constraint-layout-solver-1.0.2.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="b9cd8fc6bd15cb915735d34535db30ece0c44603">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/constraint-layout-solver-1.0.2_b06afadf48ebe6540ae91882b95aa31f4e84df76.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="/home/al/Android/Sdk/extras/android/m2repository/com/android/support/support-annotations/25.2.0/support-annotations-25.2.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="25.0.2"
+        sha1="4a5a82a027706397fff621b22fd6fa796e91d7c5">
+        <dex dex="/home/al/Documents/Tese/ARMarker/app/build/intermediates/pre-dexed/debug/support-annotations-25.2.0_9950af61fded85606910276f1b92a3540dfc4670.jar" />
     </item>
 
 </items>

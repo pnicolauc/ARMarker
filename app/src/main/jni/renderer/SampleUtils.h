@@ -64,8 +64,6 @@ countries.
 
 #include <utils/SampleMath.h>
 
-#include <mvo/mvo.h>
-
 #include "opencv2/opencv.hpp"
 // Utility for logging:
 #define LOG_TAG    "Vuforia"
@@ -129,7 +127,7 @@ struct SensorsData {
 };
 struct CameraData {
     Vuforia::CameraDevice::CAMERA_DIRECTION currentCamera;
-    Mat curr_frame;
+    cv::Mat curr_frame;
 };
 struct RotDeviceTracker {
     Vuforia::RotationalDeviceTracker* deviceTracker=0;

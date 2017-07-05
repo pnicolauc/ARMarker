@@ -216,7 +216,12 @@ std::vector<cv::Mat> AssimpLoader::getTextures(){
 bool AssimpLoader::Load3DModel(std::string modelFilename,const char* folder) {
 
     MyLOGI("Scene will be imported now");
-    scene = importerPtr->ReadFile(modelFilename, aiProcessPreset_TargetRealtime_Quality);
+    scene = importerPtr->ReadFile(modelFilename, 
+    aiProcess_GenSmoothNormals      |
+            aiProcess_CalcTangentSpace       |
+            aiProcess_Triangulate       |
+            aiProcess_JoinIdenticalVertices  |
+            aiProcess_SortByPType);
 
     // Check if import failed
     if (!scene) {

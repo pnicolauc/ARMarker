@@ -61,8 +61,6 @@ countries.
 
 #include <utils/SampleMath.h>
 
-#include <mvo/mvo.h>
-
 #include "opencv2/opencv.hpp"
 
 
@@ -81,9 +79,10 @@ struct RotDeviceTracker rotDeviceTracker;
 struct ExtTracking extTracking;
 struct TrackerParams trackerParams;
 struct UserDefTargets userDefTargets;
-struct MVOParams mvoParams;
 struct Trajectory trajectory;
 struct AuxMat auxMat;
+
+int ang=0;
 
 MyJNIHelper * gHelperObject=NULL;
 
@@ -98,73 +97,7 @@ class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
         Vuforia::ObjectTracker* objectTracker = static_cast<Vuforia::ObjectTracker*>(
                         trackerManager.getTracker(Vuforia::ObjectTracker::getClassType()));
 
-        Vuforia::Frame frame = state.getFrame();
-        LOG("images in frame %d.",frame.getNumImages());
-
-        SampleUtils::zeroesFloatVector3(mvoParams.mvoTranslation);
-
-        for (int i = 0; i < frame.getNumImages(); ++i) {
-            const Vuforia::Image *image = frame.getImage(i);
-            if (image->getFormat() == Vuforia::GRAYSCALE) {
-                if(!mvoParams.init && mvoParams.mvo){
-                    LOG("init mvo");
-                    const Vuforia::CameraCalibration& cameraCalibration =
-                    Vuforia::CameraDevice::getInstance().getCameraCalibration();
-
-                    Vuforia::Vec2F focalLength = cameraCalibration.getFocalLength();
-
-                    mvoInit(mvoParams.fl,(float)(image->getHeight()/2),(float)(image->getWidth()/(2)));
-                    mvoParams.init=true;
-                }
-                
-                cameraData.curr_frame = Mat(image->getHeight(),image->getWidth(),CV_8UC1,(unsigned char *)image->getPixels());
-                LOG("FRAME Vuforia %d %d",cameraData.curr_frame.rows,cameraData.curr_frame.cols);
-
-                //if(trackerParams.noTrackerAvailable && mvoParams.mvo){
-                    //mvoParams.mvoTranslation=mvo_processFrame((long)&(cameraData.curr_frame),sensorData.scale, trackerParams.resMatrix.data);                  
-                    //LOG("mvoTranslation - %f %f %f",mvoParams.mvoTranslation[0],mvoParams.mvoTranslation[1],mvoParams.mvoTranslation[2]);
-
-                //}
-                
-
-                break;
-            }
-        }
-        if (userDefTargets.building)
-        {
-            userDefTargets.building = false;
-            Vuforia::TrackableSource* trackableSource = userDefTargets.builder->getTrackableSource ();
-        
-            if (trackableSource != NULL)
-            {
-                objectTracker->deactivateDataSet(datasets.udts);
-                datasets.udts->destroy(userDefTargets.udt);
-    
-                userDefTargets.udt= datasets.udts->createTrackable(trackableSource);
-    
-                if(userDefTargets.udt){
-                    LOG("User Defined Target - trackableSource added");
-                }else{
-                    LOG("User Defined Target - trackableSource not added - null");
-                }
-                objectTracker->activateDataSet(datasets.udts);
-
-                LOG("User Defined Target - number of targets on dataset %d", datasets.udts->getNumTrackables());
-
-                LOG("User Defined Target - dataset limit %d active %d", datasets.udts->hasReachedTrackableLimit(),datasets.udts->isActive());
-                userDefTargets.udtcount=0;
-            }           
-        }
-        if(userDefTargets.scanning){
-            userDefTargets.scanning = false;
-
-            SampleUtils::zeroesFloatVector3(userDefTargets.lastudttranslation);
-
-            LOG("User Defined Target - quality %d",userDefTargets.builder->getFrameQuality());
-            userDefTargets.building = userDefTargets.builder->build("running", 1.0f);
-            LOG("User Defined Target - building %d",userDefTargets.building);
-        }
-        
+       
         if (datasets.switchDataSetAsap)
         {
             datasets.switchDataSetAsap = false;
@@ -233,7 +166,6 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
     SampleUtils::setRotationMatrix(180,0,1,0,auxMat.aux.data);
 
     LOG("Java_com_mavoar_markers_ImageTargets_initTracker");
-    mvoParams.mvo = jmvo;
 
     datasets.kObjectScale=(float)sca;
     jfloat* rots = env->GetFloatArrayElements( markerRot,0);
@@ -452,9 +384,6 @@ jfloat z1,jfloat z2,jfloat z3)
 void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& projectionMatrix)
 {
     bool hasMarker=false;
-    bool isUDT=false;
-
-    Vuforia::Matrix44F udtmv;
 
     // Explicitly render the Video Background
     gpuObjs.sampleAppRenderer->renderVideoBackground();
@@ -473,8 +402,6 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
     LOG("NUmber of trackables: %d",state->getNumTrackableResults());
 
-  
-
     for(int tIdx = 0; tIdx < state->getNumTrackableResults(); tIdx++) {
         // Get the trackable:
         const Vuforia::TrackableResult *result = state->getTrackableResult(tIdx);
@@ -492,39 +419,28 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
         } else {
             LOG("trackable: %s",trackable.getName());
-            bool istrNewMarker=strcmp(trackable.getName(), datasets.currMarker->name) != 0;
-            bool istrUDT=strcmp(trackable.getName(), "running") == 0;
-                
+            bool istrNewMarker=strcmp(trackable.getName(), datasets.currMarker->name) != 0;            
 
             if (istrNewMarker) {
                 //mvo_reset();
-                if (!istrUDT){
-                    LOG("New marker %s", trackable.getName());
-                    datasets.currMarker = datasets.markers[trackable.getName()];
-                    
-                } else if(!hasMarker) isUDT=true;
-            }
-            if(isUDT && istrUDT){
-                udtmv= trackerParams.modelViewMatrix;
-            }
-            else if(!istrUDT){
+                LOG("New marker %s", trackable.getName());
+                datasets.currMarker = datasets.markers[trackable.getName()];
                 hasMarker=true;
-                isUDT=false;
                 trackerParams.markerMatrix = trackerParams.modelViewMatrix;
+
             }
         }
     }
     Vuforia::Matrix44F modelViewProjection;
     Vuforia::Matrix44F joinedmv;
     
-    if(!hasMarker| isUDT){
+    if(!hasMarker){
         if(trackerParams.lastMarker ){
             Vuforia::Matrix44F inverseSensor= SampleMath::Matrix44FTranspose(trackerParams.lastMat);
             SampleUtils::multiplyMatrix(trackerParams.sensorRotation.data, 
             inverseSensor.data,trackerParams.resMatrix.data);
             joinedmv=trackerParams.markerMatrix;
-            Vuforia::Matrix44F mvo_tr;
-            SampleUtils::setIdentity(mvo_tr.data);
+
             SampleUtils::multiplyMatrix(trackerParams.resMatrix.data,
                                         &joinedmv.data[0],
                                         &joinedmv.data[0]);
@@ -535,106 +451,27 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             float view[3];            
             Vuforia::Vec3F cameraLookAt(inverseModelView.data[8], inverseModelView.data[9], inverseModelView.data[10]);
             Vuforia::Vec3F upVector(0,1,0);
-
-
-            if(isUDT){
-                float udttranslation[3];
-                udttranslation[0]=udtmv.data[12];
-                udttranslation[1]=udtmv.data[13];
-                udttranslation[2]=udtmv.data[14];
-
-                
-                float finaltranslation[3];
-                finaltranslation[0]=udttranslation[0]-userDefTargets.lastudttranslation[0];
-                finaltranslation[1]=udttranslation[1]-userDefTargets.lastudttranslation[1];
-                finaltranslation[2]=udttranslation[2]-userDefTargets.lastudttranslation[2];
-
-                userDefTargets.lastudttranslation[0]=udttranslation[0];
-                userDefTargets.lastudttranslation[1]=udttranslation[1];
-                userDefTargets.lastudttranslation[2]=udttranslation[2];
-
-                float udtMag= sqrt(pow(finaltranslation[0],2)+pow(finaltranslation[1],2)+pow(finaltranslation[2],2));
-                float unitTranslation[3];
-                if(udtMag>0){
-                    unitTranslation[0]=finaltranslation[0]/udtMag;
-                    unitTranslation[1]=finaltranslation[1]/udtMag;
-                    unitTranslation[2]=finaltranslation[2]/udtMag;
-                }else{
-                    unitTranslation[0]=0;
-                    unitTranslation[1]=0;
-                    unitTranslation[2]=0;
-                }
-                unitTranslation[0]=unitTranslation[0]*sensorData.scale;
-                unitTranslation[1]=unitTranslation[1]*sensorData.scale;
-                unitTranslation[2]=unitTranslation[2]*sensorData.scale;
-
-                if(sensorData.scale>0.09){
-                    userDefTargets.translationUDT[0]+=unitTranslation[0];
-                    userDefTargets.translationUDT[1]+=unitTranslation[1];
-                    userDefTargets.translationUDT[2]+=unitTranslation[2];
-
-                    trajectory.vec.push_back(userDefTargets.translationUDT[0]);
-                    trajectory.vec.push_back(userDefTargets.translationUDT[1]);
-                    trajectory.vec.push_back(userDefTargets.translationUDT[2]);
-
-                }
-                LOG("translation udt: %f %f %f %f",udtMag,userDefTargets.translationUDT[0],userDefTargets.translationUDT[1],userDefTargets.translationUDT[2]);
-
-                //SampleUtils::setIdentity(udtmv.data);
-
-                Vuforia::Matrix44F inverseUDT=SampleMath::Matrix44FTranspose(udtmv);
-                inverseUDT.data[3]=0;
-                inverseUDT.data[7]=0;
-                inverseUDT.data[11]=0;
-
-                udtmv.data[12]=userDefTargets.translationUDT[0];
-                udtmv.data[13]=userDefTargets.translationUDT[1];
-                udtmv.data[14]=userDefTargets.translationUDT[2];
-
-                SampleUtils::multiplyMatrix(udtmv.data,
-                                        inverseUDT.data,
-                                        udtmv.data);
-
-            }
-
-        //if(sensorData.scale>0.1){
-            SampleUtils::translatePoseMatrix(-udtmv.data[13],
-                                        -udtmv.data[12],
-                                        -udtmv.data[14],
-                                        joinedmv.data);
-        //}
-
-            if(state->getNumTrackableResults() <=1 && mvoParams.mvo && !userDefTargets.scanning && !userDefTargets.building){
-                if(userDefTargets.udtcount==4){
-                    userDefTargets.scanning=true;  
-                }
-                userDefTargets.udtcount++;
-            }
-            else{
-                userDefTargets.udtcount=0;
-            } 
         }
         
     } else{
-        SampleUtils::zeroesFloatVector3(userDefTargets.translationUDT);
-
         trackerParams.lastMat=trackerParams.sensorRotation;
         trackerParams.lastMarker=hasMarker;
         trackerParams.noTrackerAvailable=false;
         joinedmv=trackerParams.markerMatrix;        
     }
+     SampleUtils::rotatePoseMatrix(datasets.currMarker->rotation[0]+90.0,
+                                    datasets.currMarker->rotation[1],
+                                    datasets.currMarker->rotation[2] ,
+                                    datasets.currMarker->rotation[3],
+                                    &joinedmv.data[0]);
+ 
 
     SampleUtils::translatePoseMatrix(datasets.currMarker->translation[0],
                                     datasets.currMarker->translation[1],
                                     datasets.currMarker->translation[2],
                                         &joinedmv.data[0]);
 
-    SampleUtils::rotatePoseMatrix(datasets.currMarker->rotation[0],
-                                    datasets.currMarker->rotation[1],
-                                    datasets.currMarker->rotation[2] ,
-                                    datasets.currMarker->rotation[3],
-                                    &joinedmv.data[0]);
-
+   
 
     SampleUtils::scalePoseMatrix(datasets.kObjectScale,
                                 datasets.kObjectScale,

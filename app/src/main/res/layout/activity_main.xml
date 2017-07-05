@@ -13,27 +13,10 @@
 
         android:src="@drawable/logo"/>
 
-    <TextView
-        android:id="@+id/choose"
-        android:layout_below="@id/logoim"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:textSize="20sp"
-        android:text="Choose Mode:"
-        android:textColor="@color/black"/>
-
-    <Spinner
-        android:id="@+id/modules"
-        android:layout_below="@id/choose"
-        android:layout_marginTop="20dp"
-        android:entries="@array/mode"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
 
     <TextView
         android:id="@+id/data"
-        android:layout_below="@+id/modules"
+        android:layout_below="@+id/logoim"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"

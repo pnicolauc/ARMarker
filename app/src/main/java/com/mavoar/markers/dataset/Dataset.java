@@ -93,4 +93,14 @@ public class Dataset {
     public void setModelFolder(String modelFolder) {
         this.modelFolder = modelFolder;
     }
+
+    public void reverseMarkersTransforms(){
+        ArrayList<Marker> newMarkerList= new ArrayList<>();
+        for(Marker m: this.markers){
+            m.reverseTransformations();
+            newMarkerList.add(m);
+        }
+
+        this.markers=newMarkerList;
+    }
 }

@@ -48,14 +48,13 @@ public class MenuActivity extends AppCompatActivity {
         spinnerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spin.setAdapter(spinnerArrayAdapter);
 
-        final Spinner mod_spin= (Spinner) findViewById(R.id.modules);
-
         start.setOnClickListener(new View.OnClickListener() {
             Bundle setBundle(int pos){
                 SimpleDatasetInfo chosenDataset=datasets.get(pos);
                 Gson gson=new Gson();
                 Dataset dataset= gson.fromJson(loadJSONFromAsset(chosenDataset.getFolder()+"/dataset.json"),Dataset.class);
                 dataset.setFolder(chosenDataset.getFolder());
+                dataset.reverseMarkersTransforms();
                 Bundle b= new Bundle();
 
 
@@ -74,33 +73,12 @@ public class MenuActivity extends AppCompatActivity {
             public void onClick(View view) {
                 int pos= spin.getSelectedItemPosition();
 
-                switch (mod_spin.getSelectedItemPosition()){
-                    case 0:
-                        Bundle b=setBundle(pos);
-
-                        Intent i = new Intent(MenuActivity.this,
-                                MarkerModule.class);
-                        i.putExtras(b);
-                        startActivity(i);
-                        finish();
-                        break;
-                    case 1:
-                        Intent i2 = new Intent(MenuActivity.this,
-                                VOModule.class);
-                        i2.putExtra("fl",getIntent().getFloatExtra("fl",0.0f));
-                        startActivity(i2);
-                        finish();
-                        break;
-                    case 2:
-                        Bundle bund=setBundle(pos);
-                        Intent mavoar = new Intent(MenuActivity.this,
-                                MAVOAR.class);
-                        mavoar.putExtras(bund);
-                        startActivity(mavoar);
-                        finish();
-                        break;
-                }
-
+                Bundle bund=setBundle(pos);
+                Intent mavoar = new Intent(MenuActivity.this,
+                        MAVOAR.class);
+                mavoar.putExtras(bund);
+                startActivity(mavoar);
+                finish();
             }
         });
     }

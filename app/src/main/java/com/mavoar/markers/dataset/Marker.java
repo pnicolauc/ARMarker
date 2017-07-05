@@ -43,4 +43,19 @@ public class Marker implements Serializable{
         this.translation = translation;
     }
 
+    public void reverseTransformations(){
+        ArrayList<Float> reverseRot= new ArrayList<>();
+        ArrayList<Float> reverseTra= new ArrayList<>();
+
+        for(Float r:this.rotation){
+            reverseRot.add(-r);
+        }
+        for(Float t: this.translation){
+            reverseTra.add(-t);
+        }
+
+        this.rotation= reverseRot;
+        this.translation= reverseTra;
+    }
+
 }

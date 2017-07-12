@@ -218,8 +218,6 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
 
     gpuObjs.gAssimpObject->PerformGLInits(objCPP,mtlCPP,folderCPP);
 
-
-
     // Initialize the object tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     Vuforia::Tracker* tracker = trackerManager.initTracker(Vuforia::ObjectTracker::getClassType());
@@ -290,7 +288,7 @@ Java_com_mavoar_markers_ImageTargets_loadTrackerData(JNIEnv *env, jobject,jstrin
         return 0;
     }
     // Load the data sets:
-    if (!datasets.targets->load(xmlFile, Vuforia::STORAGE_APPRESOURCE))
+    if (!datasets.targets->load(xmlFile, Vuforia::STORAGE_ABSOLUTE))
     {
         LOG("Failed to load data set.");
         return 0;
@@ -420,13 +418,13 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         } else {
             LOG("trackable: %s",trackable.getName());
             bool istrNewMarker=strcmp(trackable.getName(), datasets.currMarker->name) != 0;            
+            trackerParams.markerMatrix = trackerParams.modelViewMatrix;
+            hasMarker=true;
 
             if (istrNewMarker) {
                 //mvo_reset();
                 LOG("New marker %s", trackable.getName());
                 datasets.currMarker = datasets.markers[trackable.getName()];
-                hasMarker=true;
-                trackerParams.markerMatrix = trackerParams.modelViewMatrix;
 
             }
         }
@@ -459,7 +457,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         trackerParams.noTrackerAvailable=false;
         joinedmv=trackerParams.markerMatrix;        
     }
-     SampleUtils::rotatePoseMatrix(datasets.currMarker->rotation[0]+90.0,
+     SampleUtils::rotatePoseMatrix(datasets.currMarker->rotation[0],
                                     datasets.currMarker->rotation[1],
                                     datasets.currMarker->rotation[2] ,
                                     datasets.currMarker->rotation[3],

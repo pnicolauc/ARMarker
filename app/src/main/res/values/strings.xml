@@ -2,7 +2,8 @@
     <string name="app_name">MAVOAR</string>
     <string name="app_description">Vuforia ImageTargets Sample Application</string>
     <string name="button_start">Start</string>
-
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_fileexplorer">FileexplorerActivity</string>
     <string name="INIT_ERROR">Error</string>
     <string name="INIT_ERROR_DEVICE_NOT_SUPPORTED">Failed to initialize Vuforia. This device is not supported.</string>
     <string name="INIT_ERROR_NO_CAMERA_ACCESS">Failed to initialize Vuforia. Camera not accessible</string>

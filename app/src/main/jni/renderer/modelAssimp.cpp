@@ -56,17 +56,7 @@ void ModelAssimp::PerformGLInits(const char* obj,const char* mtl,const char* fol
 
     modelObject = new AssimpLoader();
 
-    // extract the OBJ and companion files from assets
-    std::string objFilename, mtlFilename, texFilename;
-    bool isFilesPresent  =
-            gHelperObject->ExtractAssetReturnFilename(obj, objFilename) &&
-            gHelperObject->ExtractAssetReturnFilename(mtl, mtlFilename);
-    if( !isFilesPresent ) {
-        MyLOGE("Model %s does not exist!", objFilename.c_str());
-        return;
-    }
-
-    modelObject->Load3DModel(objFilename,folder);
+    modelObject->Load3DModel(obj,folder);
 
     CheckGLError("ModelAssimp::PerformGLInits");
     initsDone = true;

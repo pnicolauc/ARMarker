@@ -6,10 +6,9 @@
     <uses-feature android:name="android.hardware.camera" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />   
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <uses-feature
         android:name="android.hardware.camera.autofocus"
@@ -20,6 +19,7 @@
     <uses-feature
         android:name="android.hardware.camera.front.autofocus"
         android:required="false" />
+
 
     <supports-screens
         android:anyDensity="true"
@@ -45,6 +45,17 @@
         <activity android:name=".activities.MenuActivity" />
         <activity android:name=".activities.MarkerModule"  />
         <activity android:name=".activities.VOModule" />
+        <activity android:name=".fileexplorer.FileexplorerActivity" >
+        
+        </activity>
+         <activity
+            android:name=".fileexplorer.FileChooser"
+            android:label="Choose File" 
+             android:theme="@android:style/Theme.Holo"> 
+                <action android:name=".fileexplorer.FileChooser" />
+
+                <category android:name="android.intent.category.DEFAULT" /> 
+        </activity>
 
         <activity android:name=".activities.MAVOAR" />
 

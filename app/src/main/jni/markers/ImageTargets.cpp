@@ -180,10 +180,10 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
 
         marker->name=na;
 
-        marker->rotation[0]=(float)rots[(a*3)];
-        marker->rotation[1]=(float)rots[(a*3)+1];
-        marker->rotation[2]=(float)rots[(a*3)+2];
-        marker->rotation[3]=(float)rots[(a*3)+3];
+        marker->rotation[0]=(float)rots[(a*4)];
+        marker->rotation[1]=(float)rots[(a*4)+1];
+        marker->rotation[2]=(float)rots[(a*4)+2];
+        marker->rotation[3]=(float)rots[(a*4)+3];
 
         marker->translation[0]=(float)trans[(a*3)];
         marker->translation[1]=(float)trans[(a*3)+1];
@@ -457,10 +457,15 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         trackerParams.noTrackerAvailable=false;
         joinedmv=trackerParams.markerMatrix;        
     }
-     SampleUtils::rotatePoseMatrix(datasets.currMarker->rotation[0],
-                                    datasets.currMarker->rotation[1],
-                                    datasets.currMarker->rotation[2] ,
-                                    datasets.currMarker->rotation[3],
+
+     LOG("Rotation: %f %f %f %f",datasets.currMarker->rotation[0],datasets.currMarker->rotation[1],datasets.currMarker->rotation[2],datasets.currMarker->rotation[3]);
+     LOG("Translation: %f %f %f ",datasets.currMarker->translation[0],datasets.currMarker->translation[2],datasets.currMarker->translation[2]);
+
+     SampleUtils::rotatePoseMatrix(
+                                    -datasets.currMarker->rotation[0],
+                                    -datasets.currMarker->rotation[1],
+                                    -datasets.currMarker->rotation[2] ,
+                                    -datasets.currMarker->rotation[3],
                                     &joinedmv.data[0]);
  
 

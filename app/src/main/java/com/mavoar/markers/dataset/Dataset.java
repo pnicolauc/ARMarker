@@ -8,10 +8,10 @@ import java.util.ArrayList;
 
 public class Dataset {
     private String key;
-    private String obj;
+    private String real;
     private String modelFolder;
     private float scale;
-    private String mtl;
+    private String virtual;
     private String xml;
 
     private ArrayList<Marker> markers;
@@ -19,19 +19,19 @@ public class Dataset {
     public Dataset(){
     }
 
-    public Dataset(String key, String obj, String modelFolder, float scale, String mtl, String xml, ArrayList<Marker> markers) {
+    public Dataset(String key, String real, String modelFolder, float scale, String virtual, String xml, ArrayList<Marker> markers) {
         this.key = key;
-        this.obj = obj;
+        this.real = real;
         this.modelFolder = modelFolder;
         this.scale = scale;
-        this.mtl = mtl;
+        this.virtual = virtual;
         this.xml = xml;
         this.markers = markers;
     }
 
     public void setFolder(String folder){
-        this.obj=folder+"/"+modelFolder + "/" +obj;
-        this.mtl=folder+"/"+modelFolder + "/" +mtl;
+        this.real=folder+"/"+modelFolder + "/" +real;
+        this.virtual=folder+"/"+modelFolder + "/" +virtual;
         this.xml=folder + "/" +xml;
         this.modelFolder=folder+"/"+modelFolder;
     }
@@ -53,20 +53,20 @@ public class Dataset {
         this.key = key;
     }
 
-    public String getObj() {
-        return obj;
+    public String getReal() {
+        return real;
     }
 
-    public void setObj(String obj) {
-        this.obj = obj;
+    public void setReal(String real) {
+        this.real = real;
     }
 
-    public String getMtl() {
-        return mtl;
+    public String getVirtual() {
+        return virtual;
     }
 
-    public void setMtl(String mtl) {
-        this.mtl = mtl;
+    public void setVirtual(String virtual) {
+        this.virtual = virtual;
     }
 
     public String getXml() {

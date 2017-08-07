@@ -67,8 +67,8 @@ public class MenuActivity extends AppCompatActivity {
 
                 b.putString("name","NAME");
                 b.putString("key",dataset.getKey());
-                b.putString("obj",dataset.getObj());
-                b.putString("mtl",dataset.getMtl());
+                b.putString("obj",dataset.getVirtual());
+                b.putString("mtl",dataset.getReal());
                 b.putString("folder",dataset.getModelFolder());
                 b.putString("xml",dataset.getXml());
                 b.putFloat("scale",dataset.getScale());

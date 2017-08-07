@@ -88,6 +88,11 @@ MyJNIHelper * gHelperObject=NULL;
 
 using namespace cv;
 
+Vuforia::Vec3F cameraPos(0.0,0.0,0.0);
+Vuforia::Vec3F cameraUp;
+Vuforia::Vec3F cameraDir;
+
+
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
 {
@@ -382,7 +387,11 @@ jfloat z1,jfloat z2,jfloat z3)
 void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& projectionMatrix)
 {
     bool hasMarker=false;
+    Vuforia::Matrix44F modelViewProjection;
+    Vuforia::Matrix44F joinedmv;
+     // Did we find any trackables this frame?
 
+    Vuforia::Matrix44F inverseModelView;
     // Explicitly render the Video Background
     gpuObjs.sampleAppRenderer->renderVideoBackground();
     glEnable(GL_DEPTH_TEST);
@@ -415,22 +424,28 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             rotDeviceTracker.deviceMatrix = SampleMath::Matrix44FInverse(trackerParams.modelViewMatrix);
             //deviceMatrix = SampleMath::Matrix44FTranspose(modelViewMatrix);
 
-        } else {
+        } else if(datasets.markers.find(trackable.getName())!=datasets.markers.end()) {
+
             LOG("trackable: %s",trackable.getName());
             bool istrNewMarker=strcmp(trackable.getName(), datasets.currMarker->name) != 0;            
             trackerParams.markerMatrix = trackerParams.modelViewMatrix;
+
             hasMarker=true;
 
             if (istrNewMarker) {
                 //mvo_reset();
+                
                 LOG("New marker %s", trackable.getName());
                 datasets.currMarker = datasets.markers[trackable.getName()];
+                inverseModelView=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(trackerParams.markerMatrix));
+                // pull the camera position and look at vectors from this matrix
+                cameraPos = Vuforia::Vec3F(inverseModelView.data[12], inverseModelView.data[13], inverseModelView.data[14]);
+                
 
             }
         }
     }
-    Vuforia::Matrix44F modelViewProjection;
-    Vuforia::Matrix44F joinedmv;
+    
     
     if(!hasMarker){
         if(trackerParams.lastMarker ){
@@ -442,13 +457,6 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             SampleUtils::multiplyMatrix(trackerParams.resMatrix.data,
                                         &joinedmv.data[0],
                                         &joinedmv.data[0]);
-            // Did we find any trackables this frame?
-
-            Vuforia::Matrix44F inverseModelView = SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(joinedmv));
-            // pull the camera position and look at vectors from this matrix
-            float view[3];            
-            Vuforia::Vec3F cameraLookAt(inverseModelView.data[8], inverseModelView.data[9], inverseModelView.data[10]);
-            Vuforia::Vec3F upVector(0,1,0);
         }
         
     } else{
@@ -458,28 +466,45 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         joinedmv=trackerParams.markerMatrix;        
     }
 
-     LOG("Rotation: %f %f %f %f",datasets.currMarker->rotation[0],datasets.currMarker->rotation[1],datasets.currMarker->rotation[2],datasets.currMarker->rotation[3]);
-     LOG("Translation: %f %f %f ",datasets.currMarker->translation[0],datasets.currMarker->translation[2],datasets.currMarker->translation[2]);
+    inverseModelView=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(joinedmv));
+    // pull the camera position and look at vectors from this matrix
+    Vuforia::Vec3F camPosNew(inverseModelView.data[12], inverseModelView.data[13], inverseModelView.data[14]);
+    
+   /* SampleUtils::translatePoseMatrix(camPosNew.data[0],
+                                      camPosNew.data[1],
+                                      camPosNew.data[2],
+                                        joinedmv.data);
+    /*SampleUtils::translatePoseMatrix(-camPosNew.data[0],
+                                     - camPosNew.data[1],
+                                      -camPosNew.data[2],
+                                        joinedmv.data);*//*
+    cameraPos = Vuforia::Vec3F(cameraPos.data[0] + ((camPosNew.data[0]-cameraPos.data[0] )/8),
+                               cameraPos.data[1] + ((camPosNew.data[1]-cameraPos.data[1] )/8),
+                               cameraPos.data[2] + ((camPosNew.data[2]-cameraPos.data[2] )/8));
+    
+    SampleUtils::translatePoseMatrix(-cameraPos.data[0],
+                                      -cameraPos.data[1],
+                                      -cameraPos.data[2],
+                                        joinedmv.data);
+*/
+    LOG("Rotation: %f %f %f %f",datasets.currMarker->rotation[0],datasets.currMarker->rotation[1],datasets.currMarker->rotation[2],datasets.currMarker->rotation[3]);
+    //LOG("Translation: %f %f %f ",datasets.currMarker->translation[0],datasets.currMarker->translation[1],datasets.currMarker->translation[2]);
+  //  LOG("campos: %f %f %f ",camPosNew.data[0],camPosNew.data[1],camPosNew.data[2]);
+   //  LOG("camposFilter: %f %f %f ",cameraPos.data[0],cameraPos.data[1],cameraPos.data[2]);
 
-     SampleUtils::rotatePoseMatrix(
-                                    -datasets.currMarker->rotation[0],
-                                    -datasets.currMarker->rotation[1],
-                                    -datasets.currMarker->rotation[2] ,
-                                    -datasets.currMarker->rotation[3],
+
+    SampleUtils::rotatePoseMatrix(
+                                    180-((int)datasets.currMarker->rotation[0]),
+                                    datasets.currMarker->rotation[1],
+                                    datasets.currMarker->rotation[2] ,
+                                    datasets.currMarker->rotation[3],
                                     &joinedmv.data[0]);
- 
+
 
     SampleUtils::translatePoseMatrix(datasets.currMarker->translation[0],
-                                    datasets.currMarker->translation[1],
-                                    datasets.currMarker->translation[2],
+                                      datasets.currMarker->translation[1],
+                                      datasets.currMarker->translation[2],
                                         &joinedmv.data[0]);
-
-   
-
-    SampleUtils::scalePoseMatrix(datasets.kObjectScale,
-                                datasets.kObjectScale,
-                                datasets.kObjectScale,
-                                &joinedmv.data[0]);
 
 
     SampleUtils::multiplyMatrix(&projectionMatrix.data[0],

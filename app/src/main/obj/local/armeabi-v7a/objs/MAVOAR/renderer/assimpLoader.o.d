@@ -178,6 +178,10 @@ C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/obj/local/armeabi-v
   C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni\glm/gtx/quaternion.inl \
   C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni\renderer/myGLFunctions.h \
   C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni\renderer/gl3stub.h \
+  C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni/../../../../vuforia-build/include\Vuforia/Vuforia.h \
+  C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni/../../../../vuforia-build/include\Vuforia/System.h \
+  C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni/../../../../vuforia-build/include\Vuforia/Vectors.h \
+  C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni/../../../../vuforia-build/include\Vuforia/Matrices.h \
   C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni\renderer/myShader.h \
   C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni\utils/myLogger.h \
   C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni\utils/misc.h \
@@ -538,6 +542,14 @@ C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni\glm/gtx/quatern
 C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni\renderer/myGLFunctions.h:
 
 C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni\renderer/gl3stub.h:
+
+C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni/../../../../vuforia-build/include\Vuforia/Vuforia.h:
+
+C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni/../../../../vuforia-build/include\Vuforia/System.h:
+
+C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni/../../../../vuforia-build/include\Vuforia/Vectors.h:
+
+C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni/../../../../vuforia-build/include\Vuforia/Matrices.h:
 
 C:/Users/80nic/OneDrive/Documents/Tese/ARMarker/app/src/main/jni\renderer/myShader.h:
 

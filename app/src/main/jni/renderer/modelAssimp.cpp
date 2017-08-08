@@ -62,6 +62,9 @@ void ModelAssimp::PerformGLInits(const char* obj,const char* mtl,const char* fol
     initsDone = true;
 }
 
+ThreeDModel* ModelAssimp::getThreeDModel(){
+    return modelObject->getThreeDModel();
+}
 
 
 std::vector<MeshInfo*> ModelAssimp::getMeshes(){

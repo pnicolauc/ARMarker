@@ -34,9 +34,10 @@ public:
     void    PerformGLInits(const char* obj,const char* mtl,const char* folder);
     std::vector<MeshInfo*> getMeshes();
     std::vector<cv::Mat> getTextures();
+
+    ThreeDModel* getThreeDModel();
 private:
     bool    initsDone;
-
     AssimpLoader * modelObject;
 };
 

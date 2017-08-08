@@ -82,6 +82,9 @@ struct UserDefTargets userDefTargets;
 struct Trajectory trajectory;
 struct AuxMat auxMat;
 
+ThreeDModel* model;
+Vuforia::Matrix44F modelViewProjection;
+
 int ang=0;
 
 MyJNIHelper * gHelperObject=NULL;
@@ -223,6 +226,7 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
 
     gpuObjs.gAssimpObject->PerformGLInits(objCPP,mtlCPP,folderCPP);
 
+    model = gpuObjs.gAssimpObject->getThreeDModel();
     // Initialize the object tracker:
     Vuforia::TrackerManager& trackerManager = Vuforia::TrackerManager::getInstance();
     Vuforia::Tracker* tracker = trackerManager.initTracker(Vuforia::ObjectTracker::getClassType());
@@ -383,11 +387,44 @@ jfloat z1,jfloat z2,jfloat z3)
     }
 }
 
+void drawNode(const Node *node, Vuforia::Matrix44F objectMatrix)
+{
+    std::vector<MeshInfo*> modelMeshes= gpuObjs.gAssimpObject->getMeshes();
+    unsigned int numberOfLoadedMeshes = modelMeshes.size();
+    for(int imm = 0; imm<node->meshes.size(); ++imm)
+    {
+        if (modelMeshes[0]->mTextureID) {    
+
+        glActiveTexture(GL_TEXTURE0);
+
+        glUniform1i(gpuObjs.texSampler2DHandle, 0 );
+
+        glBindTexture( GL_TEXTURE_2D, node->meshes[imm]->material->mTextureID);
+
+        }
+        glVertexAttribPointer(gpuObjs.vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
+                            (const GLvoid*) node->meshes[imm]->vertex /*(modelMeshes[0]->vertices)*/);
+        glVertexAttribPointer(gpuObjs.textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,
+                            (const GLvoid*) node->meshes[imm]->uv);
+
+        glEnableVertexAttribArray(gpuObjs.vertexHandle);
+        glEnableVertexAttribArray(gpuObjs.textureCoordHandle);
+        glUniformMatrix4fv(gpuObjs.mvpMatrixHandle, 1, GL_FALSE,
+        (GLfloat*)&modelViewProjection.data[0] );
+
+        glDrawElements(GL_TRIANGLES,   node->meshes[imm]->indexCount, GL_UNSIGNED_SHORT,
+                    (const GLvoid*)(node->meshes[imm]->indices));
+
+    }
+
+    // Recursively draw this nodes children nodes
+    for(int inn = 0; inn<node->nodes.size(); ++inn)
+        drawNode(&node->nodes[inn], objectMatrix);
+}
 // This method will be called from SampleAppRenderer per each rendering primitives view
 void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& projectionMatrix)
 {
     bool hasMarker=false;
-    Vuforia::Matrix44F modelViewProjection;
     Vuforia::Matrix44F joinedmv;
      // Did we find any trackables this frame?
 
@@ -470,29 +507,6 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
     // pull the camera position and look at vectors from this matrix
     Vuforia::Vec3F camPosNew(inverseModelView.data[12], inverseModelView.data[13], inverseModelView.data[14]);
     
-   /* SampleUtils::translatePoseMatrix(camPosNew.data[0],
-                                      camPosNew.data[1],
-                                      camPosNew.data[2],
-                                        joinedmv.data);
-    /*SampleUtils::translatePoseMatrix(-camPosNew.data[0],
-                                     - camPosNew.data[1],
-                                      -camPosNew.data[2],
-                                        joinedmv.data);*//*
-    cameraPos = Vuforia::Vec3F(cameraPos.data[0] + ((camPosNew.data[0]-cameraPos.data[0] )/8),
-                               cameraPos.data[1] + ((camPosNew.data[1]-cameraPos.data[1] )/8),
-                               cameraPos.data[2] + ((camPosNew.data[2]-cameraPos.data[2] )/8));
-    
-    SampleUtils::translatePoseMatrix(-cameraPos.data[0],
-                                      -cameraPos.data[1],
-                                      -cameraPos.data[2],
-                                        joinedmv.data);
-*/
-    LOG("Rotation: %f %f %f %f",datasets.currMarker->rotation[0],datasets.currMarker->rotation[1],datasets.currMarker->rotation[2],datasets.currMarker->rotation[3]);
-    //LOG("Translation: %f %f %f ",datasets.currMarker->translation[0],datasets.currMarker->translation[1],datasets.currMarker->translation[2]);
-  //  LOG("campos: %f %f %f ",camPosNew.data[0],camPosNew.data[1],camPosNew.data[2]);
-   //  LOG("camposFilter: %f %f %f ",cameraPos.data[0],cameraPos.data[1],cameraPos.data[2]);
-
-
     SampleUtils::rotatePoseMatrix(
                                     180-((int)datasets.currMarker->rotation[0]),
                                     datasets.currMarker->rotation[1],
@@ -511,37 +525,9 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                 &joinedmv.data[0] ,
                                 &modelViewProjection.data[0]);
 
-    glUseProgram(gpuObjs.shaderProgramID);
-
-
-    std::vector<MeshInfo*> modelMeshes= gpuObjs.gAssimpObject->getMeshes();
-    unsigned int numberOfLoadedMeshes = modelMeshes.size();
 
     // render all meshes
-    for (unsigned int n = 0; n < numberOfLoadedMeshes; ++n) {
-    if (modelMeshes[n]->mTextureID) {
-        glActiveTexture(GL_TEXTURE0);
-
-        glUniform1i(gpuObjs.texSampler2DHandle, 0 );
-
-        glBindTexture( GL_TEXTURE_2D, modelMeshes[n]->mTextureID);
-
-        }
-        glVertexAttribPointer(gpuObjs.vertexHandle, 3, GL_FLOAT, GL_FALSE, 0,
-                            (const GLvoid*)  (modelMeshes[n]->vertices));
-        glVertexAttribPointer(gpuObjs.textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0,
-                            (const GLvoid*) (modelMeshes[n]->texCoords));
-
-        glEnableVertexAttribArray(gpuObjs.vertexHandle);
-        glEnableVertexAttribArray(gpuObjs.textureCoordHandle);
-        glUniformMatrix4fv(gpuObjs.mvpMatrixHandle, 1, GL_FALSE,
-        (GLfloat*)&modelViewProjection.data[0] );
-
-        glDrawElements(GL_TRIANGLES,  modelMeshes[n]->nIndices, GL_UNSIGNED_SHORT,
-                    (const GLvoid*)(modelMeshes[n]->indices));
-
-
-    }
+    drawNode(model->node , Vuforia::Matrix44F());
 
     SampleUtils::checkGlError("ImageTargets renderFrame");
     glDisable(GL_DEPTH_TEST);  
@@ -829,21 +815,20 @@ Java_com_mavoar_renderer_GLRenderer_initRendering(
     // Define clear color
     glClearColor(0.0f, 0.0f, 0.0f, Vuforia::requiresAlpha() ? 0.0f : 1.0f);
 
-    std::vector<cv::Mat> textures= gpuObjs.gAssimpObject->getTextures();
+    //std::vector<cv::Mat> textures= gpuObjs.gAssimpObject->getTextures();
 
-    std::vector<MeshInfo*> modelMeshes= gpuObjs.gAssimpObject->getMeshes();
-    unsigned int numberOfLoadedMeshes = modelMeshes.size();
+    //std::vector<MeshInfo*> modelMeshes= gpuObjs.gAssimpObject->getMeshes();
+    //unsigned int numberOfLoadedMeshes = modelMeshes.size();
 
     // Now generate the OpenGL texture objects and add settings
-    for (int i = 0; i < numberOfLoadedMeshes; ++i)
+    for (int i = 0; i < model->m_materials.size(); ++i)
     {
-        if(textures.size()>i){
-        MeshInfo* meshinfo=modelMeshes.at(i);
+       
 
-        cv::Mat texture= textures.at(i);
+        cv::Mat texture= model->m_materials[i]->cvTexture;
 
-        glGenTextures(1, &(meshinfo->mTextureID));
-        glBindTexture(GL_TEXTURE_2D, meshinfo->mTextureID);
+        glGenTextures(1, &(model->m_materials[i]->mTextureID));
+        glBindTexture(GL_TEXTURE_2D, model->m_materials[i]->mTextureID);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture.cols,
@@ -851,8 +836,6 @@ Java_com_mavoar_renderer_GLRenderer_initRendering(
                   texture.data );
 
         MyLOGI("Cols:%d; Rows:%d;", texture.cols,texture.rows);
-        }
-        else{break;}
 
     }
     gpuObjs.shaderProgramID     = SampleUtils::createProgramFromBuffer(cubeMeshVertexShader,

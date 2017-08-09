@@ -94,7 +94,10 @@ using namespace cv;
 Vuforia::Vec3F cameraPos(0.0,0.0,0.0);
 Vuforia::Vec3F cameraUp;
 Vuforia::Vec3F cameraDir;
+Vuforia::Vec3F cameraRight;
 
+bool istrNewMarker=false;
+bool usePreviousVec=false;
 
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
@@ -464,7 +467,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         } else if(datasets.markers.find(trackable.getName())!=datasets.markers.end()) {
 
             LOG("trackable: %s",trackable.getName());
-            bool istrNewMarker=strcmp(trackable.getName(), datasets.currMarker->name) != 0;            
+            istrNewMarker=strcmp(trackable.getName(), datasets.currMarker->name) != 0;            
             trackerParams.markerMatrix = trackerParams.modelViewMatrix;
 
             hasMarker=true;
@@ -495,6 +498,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                         &joinedmv.data[0],
                                         &joinedmv.data[0]);
         }
+
         
     } else{
         trackerParams.lastMat=trackerParams.sensorRotation;
@@ -503,9 +507,52 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         joinedmv=trackerParams.markerMatrix;        
     }
 
+
+    if(istrNewMarker) usePreviousVec=false;
+
     inverseModelView=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(joinedmv));
-    // pull the camera position and look at vectors from this matrix
-    Vuforia::Vec3F camPosNew(inverseModelView.data[12], inverseModelView.data[13], inverseModelView.data[14]);
+        // pull the camera position and look at vectors from this matrix
+
+    if(usePreviousVec && hasMarker){
+        cameraPos=Vuforia::Vec3F((inverseModelView.data[12]*0.2+cameraPos.data[0]*0.8),(inverseModelView.data[13]*0.2+cameraPos.data[1]*0.8), (inverseModelView.data[14]*0.2+cameraPos.data[2]*0.8));
+
+        cameraDir=Vuforia::Vec3F((inverseModelView.data[8]*0.2+cameraDir.data[0]*0.8), (inverseModelView.data[9]*0.2+cameraDir.data[1]*0.8),(inverseModelView.data[10]*0.2+cameraDir.data[2]*0.8));
+
+        cameraRight=Vuforia::Vec3F((inverseModelView.data[0]*0.2+cameraRight.data[0]*0.8),(inverseModelView.data[1]*0.2+cameraRight.data[1]*0.8),(inverseModelView.data[2]*0.2+cameraRight.data[2]*0.8));
+
+        cameraUp=Vuforia::Vec3F((inverseModelView.data[4]*0.2+cameraUp.data[0]*0.8),(inverseModelView.data[5]*0.2+cameraUp.data[1]*0.8),(inverseModelView.data[6]*0.2+cameraUp.data[2]*0.8));
+
+    }else if(!usePreviousVec && hasMarker){
+        cameraPos=Vuforia::Vec3F(inverseModelView.data[12],inverseModelView.data[13],inverseModelView.data[14]);
+
+        cameraDir=Vuforia::Vec3F(inverseModelView.data[8],inverseModelView.data[9],inverseModelView.data[10]);
+
+        cameraRight=Vuforia::Vec3F(inverseModelView.data[0],inverseModelView.data[1],inverseModelView.data[2]);
+
+        cameraUp=Vuforia::Vec3F(inverseModelView.data[4],inverseModelView.data[5],inverseModelView.data[6]);
+        usePreviousVec=true;
+    }
+
+    if(hasMarker){
+        inverseModelView.data[0]=cameraRight.data[0];
+        inverseModelView.data[1]=cameraRight.data[1];
+        inverseModelView.data[2]=cameraRight.data[2];
+        inverseModelView.data[4]=cameraUp.data[0];
+        inverseModelView.data[5]=cameraUp.data[1];
+        inverseModelView.data[6]=cameraUp.data[2];
+        inverseModelView.data[8]=cameraDir.data[0];
+        inverseModelView.data[9]=cameraDir.data[1];
+        inverseModelView.data[10]=cameraDir.data[2];
+        inverseModelView.data[12]=cameraPos.data[0];
+        inverseModelView.data[13]=cameraPos.data[1];
+        inverseModelView.data[14]=cameraPos.data[2];
+
+        joinedmv=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(inverseModelView));
+
+        trackerParams.markerMatrix = joinedmv;
+    }
+
+
     
     SampleUtils::rotatePoseMatrix(
                                     180-((int)datasets.currMarker->rotation[0]),

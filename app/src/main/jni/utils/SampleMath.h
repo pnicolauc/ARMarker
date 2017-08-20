@@ -49,7 +49,8 @@ public:
     static float Matrix44FDeterminate(Vuforia::Matrix44F& m);
     
     static Vuforia::Matrix44F Matrix44FInverse(Vuforia::Matrix44F& m);
-    
+    static void Matrix44FClone(Vuforia::Matrix44F& m1,Vuforia::Matrix44F& m2);
+
 };
 
 #endif // _VUFORIA_SAMPLEMATH_H_

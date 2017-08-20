@@ -233,6 +233,27 @@ SampleMath::Matrix44FDeterminate(Vuforia::Matrix44F& m)
             m.data[4] * m.data[1] * m.data[10] * m.data[15] + m.data[0] * m.data[5] * m.data[10] * m.data[15] ;
 }
 
+void
+SampleMath::Matrix44FClone(Vuforia::Matrix44F& m1,Vuforia::Matrix44F& m2)
+{
+m1.data[0]=m2.data[0];
+m1.data[1]=m2.data[1];
+m1.data[2]=m2.data[2];
+m1.data[3]=m2.data[3];
+m1.data[4]=m2.data[4];
+m1.data[5]=m2.data[5];
+m1.data[6]=m2.data[6];
+m1.data[7]=m2.data[7];
+m1.data[8]=m2.data[8];
+m1.data[9]=m2.data[9];
+m1.data[10]=m2.data[10];
+m1.data[11]=m2.data[11];
+m1.data[12]=m2.data[12];
+m1.data[13]=m2.data[13];
+m1.data[14]=m2.data[14];
+m1.data[15]=m2.data[15];
+}
+
 
 Vuforia::Matrix44F
 SampleMath::Matrix44FInverse(Vuforia::Matrix44F& m)

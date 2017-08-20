@@ -33,6 +33,8 @@ public class MenuActivity extends AppCompatActivity {
     String path;
 	EditText edittext;
 
+    Spinner persSpinner;
+    Spinner modelSpinner;
 
     private static final String NATIVE_LIB_SAMPLE = "MAVOAR";
     private static final String NATIVE_LIB_VUFORIA = "Vuforia";
@@ -53,6 +55,23 @@ public class MenuActivity extends AppCompatActivity {
 
         Button start= (Button) findViewById(R.id.start);
 
+        persSpinner= (Spinner) findViewById(R.id.persist);
+        ArrayList<String> list = new ArrayList<String>();
+        list.add("Mixed");
+        list.add("Sensor Only");
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+            android.R.layout.simple_spinner_item, list);
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        persSpinner.setAdapter(dataAdapter);
+
+        modelSpinner= (Spinner) findViewById(R.id.modeltype);
+        ArrayList<String> list2 = new ArrayList<String>();
+        list2.add("Virtual Model");
+        list2.add("Real Model");
+        ArrayAdapter<String> dataAdapter2 = new ArrayAdapter<String>(this,
+            android.R.layout.simple_spinner_item, list2);
+        dataAdapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        modelSpinner.setAdapter(dataAdapter2);
 
         start.setOnClickListener(new View.OnClickListener(){
              Bundle setBundle(){
@@ -67,7 +86,12 @@ public class MenuActivity extends AppCompatActivity {
 
                 b.putString("name","NAME");
                 b.putString("key",dataset.getKey());
-                b.putString("obj",dataset.getVirtual());
+                if( modelSpinner.getSelectedItemPosition()==0){
+                    b.putString("obj",dataset.getVirtual());
+                }
+                else b.putString("obj",dataset.getVirtual());
+
+                b.putInt("mode",persSpinner.getSelectedItemPosition());
                 b.putString("mtl",dataset.getReal());
                 b.putString("folder",dataset.getModelFolder());
                 b.putString("xml",dataset.getXml());

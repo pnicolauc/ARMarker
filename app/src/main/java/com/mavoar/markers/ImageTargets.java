@@ -82,6 +82,7 @@ public class ImageTargets
     private String dataset_xml;
     private String dataset_folder;
     private float dataset_scale;
+    private int dataset_mode;
     private ArrayList<Marker> dataset_markers;
     private boolean mvo;
 
@@ -363,6 +364,8 @@ public class ImageTargets
         this.ratio = ratio;
         this.mvo = mvo;
         dataset_key = args.getString("key");
+        dataset_mode = args.getInt("mode");
+
         dataset_name = args.getString("name");
         dataset_obj = args.getString("obj");
         dataset_mtl = args.getString("mtl");
@@ -385,7 +388,7 @@ public class ImageTargets
     /** Native tracker initialization and deinitialization. */
     public native int initTracker(AssetManager c, String pathToInternalDir,
                                   String obj,String mtl,String xml,String folder,float scale, int markerNum,
-                                  String[] markerNames,float[] markerRot,float[] markerTra, float[] markerSca,boolean mvo);
+                                  String[] markerNames,float[] markerRot,float[] markerTra, float[] markerSca,boolean mvo,int mode);
 
     public native void deinitTracker();
     /** Native functions to load and destroy tracking data. */
@@ -588,7 +591,7 @@ public class ImageTargets
 
                 if (initTracker(activity.getAssets(),activity.getFilesDir().getAbsolutePath(),
                         dataset_obj,dataset_mtl,dataset_xml,dataset_folder,dataset_scale,markersNum,
-                        markerNames,markerRot,markerTra,markerSca,mvo) > 0)
+                        markerNames,markerRot,markerTra,markerSca,mvo,dataset_mode) > 0)
                 {
                     // Proceed to next application initialization status:
                     updateApplicationStatus(APPSTATUS_INIT_APP_AR);

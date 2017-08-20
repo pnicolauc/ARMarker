@@ -54,11 +54,42 @@
          </Button>
     </RelativeLayout> 
 
+     <TextView
+        android:id="@+id/textmodel"
+        android:layout_below="@+id/relativeLayout1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:textSize="20sp"
+        android:text="Choose 3D Model:"
+        android:textColor="@color/black"/>
+    <Spinner
+        android:id="@+id/modeltype"
+        android:layout_marginTop="20dp"
+        android:layout_below="@+id/textmodel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+     <TextView
+        android:id="@+id/textpersist"
+        android:layout_below="@+id/modeltype"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:textSize="20sp"
+        android:text="Choose Rotation Mode:"
+        android:textColor="@color/black"/>
+    <Spinner
+        android:id="@+id/persist"
+        android:layout_marginTop="20dp"
+        android:layout_below="@+id/textpersist"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
     <Button
         android:id="@+id/start"
         android:layout_width="300dp"
-        android:layout_below="@id/relativeLayout1"
+        android:layout_below="@id/persist"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="30dp"

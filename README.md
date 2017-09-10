@@ -1,10 +1,10 @@
 # ARMarker
 
-##Guide
+## Guide
 
-##Computer App
+## Computer App
 https://github.com/Machinezero/ARMarkerEditor
 
-##Author
+## Author
 
 Pedro Carvalho

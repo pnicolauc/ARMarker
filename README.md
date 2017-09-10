@@ -1,16 +1,10 @@
-# MAVOAR - Marker Assisted Visual Odometry Augmented Reality
+# ARMarker
 
-A augmented reality application for large environment virtualization.
+##Guide
 
+##Computer App
+https://github.com/Machinezero/ARMarkerEditor
 
-## Tools
-* Vuforia for 2D Marker Recognition
-* Assimp 3D model loading
-* OpenCV for Monocular Visual Odometry algorithm and Texture loading
+##Author
 
-## Projects
-### VO Module
-### Marker Module
-### MAVOAR
-
-
+Pedro Carvalho

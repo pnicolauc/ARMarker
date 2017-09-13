@@ -18,6 +18,7 @@ import com.mavoar.R;
 import com.mavoar.markers.dataset.Dataset;
 import com.mavoar.markers.dataset.SimpleDatasetInfo;
 import android.widget.EditText; 
+import android.widget.ProgressBar;
 
 import java.io.IOException;
 import java.io.File;
@@ -33,8 +34,8 @@ public class MenuActivity extends AppCompatActivity {
     String path;
 	EditText edittext;
 
-    Spinner persSpinner;
     Spinner modelSpinner;
+
 
     private static final String NATIVE_LIB_SAMPLE = "MAVOAR";
     private static final String NATIVE_LIB_VUFORIA = "Vuforia";
@@ -55,14 +56,6 @@ public class MenuActivity extends AppCompatActivity {
 
         Button start= (Button) findViewById(R.id.start);
 
-        persSpinner= (Spinner) findViewById(R.id.persist);
-        ArrayList<String> list = new ArrayList<String>();
-        list.add("Mixed");
-        list.add("Sensor Only");
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-            android.R.layout.simple_spinner_item, list);
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        persSpinner.setAdapter(dataAdapter);
 
         modelSpinner= (Spinner) findViewById(R.id.modeltype);
         ArrayList<String> list2 = new ArrayList<String>();
@@ -89,9 +82,9 @@ public class MenuActivity extends AppCompatActivity {
                 if( modelSpinner.getSelectedItemPosition()==0){
                     b.putString("obj",dataset.getVirtual());
                 }
-                else b.putString("obj",dataset.getVirtual());
+                else b.putString("obj",dataset.getReal());
 
-                b.putInt("mode",persSpinner.getSelectedItemPosition());
+                b.putInt("mode",0);
                 b.putString("mtl",dataset.getReal());
                 b.putString("folder",dataset.getModelFolder());
                 b.putString("xml",dataset.getXml());
@@ -104,13 +97,25 @@ public class MenuActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View view) {
+                ProgressBar progressBar= (ProgressBar) findViewById(R.id.progbar);;
+
                 if(curFileName.length()>0){
-                    Unzip.unzip(new File(path+"/"+curFileName),new File("/sdcard/Download/tmpardata"));
-                    Bundle bund=setBundle();
-                    Intent mavoar = new Intent(MenuActivity.this,MAVOAR.class);
-                    mavoar.putExtras(bund);
-                    startActivity(mavoar);
-                    finish();
+                    progressBar.setVisibility(View.VISIBLE);
+                    Thread welcomeThread = new Thread() {
+                                float fl;
+                                @Override
+                                public void run() {
+                                Unzip.unzip(new File(path+"/"+curFileName),new File("/sdcard/Download/tmpardata"));
+                                
+                                Bundle bund=setBundle();
+                                Intent mavoar = new Intent(MenuActivity.this,MAVOAR.class);
+                                mavoar.putExtras(bund);
+                                startActivity(mavoar);
+                                finish();    
+                        }
+                            };
+                    welcomeThread.start();
+                    
                 }
             }
         });

@@ -114,6 +114,7 @@ struct DatasetData {
     std::map<std::string,Marker*> markers;
     Marker* currMarker;
 
+    std::vector<std::string> currentMarkers;
 
     const int STONES_AND_CHIPS_DATASET_ID = 0;
     const int TARMAC_DATASET_ID = 1;

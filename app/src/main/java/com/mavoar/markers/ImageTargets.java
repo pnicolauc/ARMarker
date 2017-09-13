@@ -474,6 +474,7 @@ public class ImageTargets
     /** Called when the system is about to start resuming a previous activity. */
     public void pause()
     {
+        saveTrajectory();
         if (mGlView != null)
         {
             mGlView.setVisibility(View.INVISIBLE);

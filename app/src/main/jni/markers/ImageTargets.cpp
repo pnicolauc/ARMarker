@@ -117,6 +117,10 @@ Vuforia::Matrix44F firstRot;
 
 bool hasMarker=false;
 
+std::vector<Vuforia::Vec3F> rotations;
+std::vector<Vuforia::Vec3F> translations;
+
+
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
 {
@@ -495,7 +499,6 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
     if(state->getNumTrackableResults() > 0 | firstMarker){
         if(state->getNumTrackableResults() == 0) hasMarker=false;
-        firstMarker=true;
         for(int tIdx = 0; tIdx < state->getNumTrackableResults(); tIdx++) {
             // Get the trackable:
             const Vuforia::TrackableResult *result = state->getTrackableResult(tIdx);
@@ -534,22 +537,11 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
                 hasMarker=true;
 
-                if (istrNewMarker) {
-                    //mvo_reset();
-                    
+                if (istrNewMarker) {                  
                     LOG("New marker %s", trackable.getName());
                     datasets.currMarker = datasets.markers[trackable.getName()];
                     inverseModelView=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(trackerParams.markerMatrix));
                     // pull the camera position and look at vectors from this matrix
-                    cameraPos= Vuforia::Vec3F(inverseModelView.data[12], inverseModelView.data[13], inverseModelView.data[14]);
-                    cameraDir=Vuforia::Vec3F(inverseModelView.data[8], inverseModelView.data[9],inverseModelView.data[10]);
-                    cameraRight=Vuforia::Vec3F(inverseModelView.data[0],inverseModelView.data[1],inverseModelView.data[2]);
-                    cameraUp=Vuforia::Vec3F(inverseModelView.data[4],inverseModelView.data[5],inverseModelView.data[6]);
-
-                    cameraPosSlower=Vuforia::Vec3F(inverseModelView.data[12], inverseModelView.data[13], inverseModelView.data[14]);
-                    cameraDirSlower=Vuforia::Vec3F(inverseModelView.data[8], inverseModelView.data[9],inverseModelView.data[10]);
-                    cameraRightSlower=Vuforia::Vec3F(inverseModelView.data[0],inverseModelView.data[1],inverseModelView.data[2]);
-                    cameraUpSlower=Vuforia::Vec3F(inverseModelView.data[4],inverseModelView.data[5],inverseModelView.data[6]);
                     
                     SampleMath::Matrix44FClone(lastMVMatrix,trackerParams.modelViewMatrix);
 
@@ -588,22 +580,23 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         SampleUtils::multiplyMatrix(currMVMatrix.data, 
         SampleMath::Matrix44FTranspose(lastMVMatrix).data,lastMVMatrix.data);
 
-
         bool poseReliable=false;
-
-        
-
-        if(usePreviousVec && hasMarker){
-            poseReliable = isPoseReliable(trackerParams.resMatrix,lastMVMatrix);
+    
+        if(firstMarker){
+            if(hasMarker)
+                poseReliable = isPoseReliable(trackerParams.resMatrix,lastMVMatrix);
+            
             LOG("poseReliable: %d",poseReliable);
-
-            if(poseReliable){
-                cameraPos=Vuforia::Vec3F((inverseModelView.data[12]*0.3+cameraPos.data[0]*0.7),(inverseModelView.data[13]*0.3+cameraPos.data[1]*0.7), (inverseModelView.data[14]*0.3+cameraPos.data[2]*0.7));
-                cameraDir=Vuforia::Vec3F((inverseModelView.data[8]*0.3+cameraDir.data[0]*0.7), (inverseModelView.data[9]*0.3+cameraDir.data[1]*0.7),(inverseModelView.data[10]*0.3+cameraDir.data[2]*0.7));
-                cameraRight=Vuforia::Vec3F((inverseModelView.data[0]*0.3+cameraRight.data[0]*0.7),(inverseModelView.data[1]*0.3+cameraRight.data[1]*0.7),(inverseModelView.data[2]*0.3+cameraRight.data[2]*0.7));
-                cameraUp=Vuforia::Vec3F((inverseModelView.data[4]*0.3+cameraUp.data[0]*0.7),(inverseModelView.data[5]*0.3+cameraUp.data[1]*0.7),(inverseModelView.data[6]*0.3+cameraUp.data[2]*0.7));
+            bool addPreviousMatrix=false;
+            if(hasMarker && poseReliable) addPreviousMatrix=true;
+            if(!hasMarker) addPreviousMatrix=true;
+            if(addPreviousMatrix){
+                cameraPos=Vuforia::Vec3F((inverseModelView.data[12]*0.6+cameraPos.data[0]*0.4),(inverseModelView.data[13]*0.6+cameraPos.data[1]*0.4), (inverseModelView.data[14]*0.6+cameraPos.data[2]*0.4));
+                cameraDir=Vuforia::Vec3F((inverseModelView.data[8]*0.6+cameraDir.data[0]*0.4), (inverseModelView.data[9]*0.6+cameraDir.data[1]*0.4),(inverseModelView.data[10]*0.6+cameraDir.data[2]*0.4));
+                cameraRight=Vuforia::Vec3F((inverseModelView.data[0]*0.6+cameraRight.data[0]*0.4),(inverseModelView.data[1]*0.6+cameraRight.data[1]*0.4),(inverseModelView.data[2]*0.6+cameraRight.data[2]*0.4));
+                cameraUp=Vuforia::Vec3F((inverseModelView.data[4]*0.6+cameraUp.data[0]*0.4),(inverseModelView.data[5]*0.6+cameraUp.data[1]*0.4),(inverseModelView.data[6]*0.6+cameraUp.data[2]*0.4));
           }
-        }else if(!usePreviousVec && hasMarker){
+        }else if(!firstMarker && hasMarker){
             cameraPos=Vuforia::Vec3F(inverseModelView.data[12],inverseModelView.data[13],inverseModelView.data[14]);
             cameraDir=Vuforia::Vec3F(inverseModelView.data[8],inverseModelView.data[9],inverseModelView.data[10]);
             cameraRight=Vuforia::Vec3F(inverseModelView.data[0],inverseModelView.data[1],inverseModelView.data[2]);
@@ -611,6 +604,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
  
             usePreviousVec=true;
         }
+        
 
         inverseModelView.data[12]=0;
         inverseModelView.data[13]=0;
@@ -643,12 +637,15 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             inverseModelView.data[13]=cameraPos.data[1];
             inverseModelView.data[14]=cameraPos.data[2];
 
+            translations.push_back(cameraPos);
+            rotations.push_back(cameraDir);
+
             joinedmv=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(inverseModelView));
             
             trackerParams.modelViewMatrix=joinedmv;
             trackerParams.markerMatrix = joinedmv;
             
-            if(!poseReliable && usePreviousVec){
+            if(!poseReliable){
                    SampleUtils::multiplyMatrix(trackerParams.resMatrix.data,
                                             &cumRotation.data[0],
                                             &cumRotation.data[0]);
@@ -661,8 +658,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                 SampleUtils::setIdentity(cumRotation.data);
             }
 
-
-
+            poseReliable=true;
             trackerParams.lastMat=trackerParams.sensorRotation;
 
         }else{
@@ -730,6 +726,8 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
 
         // render all meshes
         drawNode(model->node , Vuforia::Matrix44F());
+        firstMarker=true;
+
     }
     SampleUtils::checkGlError("ImageTargets renderFrame");
     glDisable(GL_DEPTH_TEST);  
@@ -823,31 +821,44 @@ JNIEXPORT void JNICALL
 Java_com_mavoar_markers_ImageTargets_saveTrajectory(
                                                         JNIEnv* env, jobject obj)
 {
-    FILE* file = fopen("/sdcard/mavoar_traj.txt","w+");
+    FILE* file = fopen("/sdcard/translations.txt","w+");
+    FILE* file2 = fopen("/sdcard/rotations.txt","w+");
 
-    int vecSize= trajectory.vec.size();
+    int vecSize= rotations.size();
 
     LOG("Java_com_mavoar_markers_ImageTargets_saveTrajectory %d points",vecSize);
 
-    std::string str;
+    std::string str1;
+    std::string str2;
 
-    int ind=1;
-    for(float i : trajectory.vec){
+    for(int i=0;i<vecSize;i++){
         std::stringstream ss;
-        ss << i;
-        str.append(ss.str());
-        str.append(" ");
-        if(ind%3==0)
-            str.append("\n");
+        ss << translations[i].data[0] << "," << translations[i].data[1]  << "," << translations[i].data[2];
+        str1.append(ss.str());
+        str1.append("\n");
 
-        ind++;
+        std::stringstream ss2;
+        ss2 << rotations[i].data[0] << "," << rotations[i].data[1]  << "," << rotations[i].data[2];
+
+        str2.append(ss2.str());
+        str2.append("\n");
     }
+
+        LOG("Java_com_mavoar_markers_ImageTargets_saveTrajectory %s points",str1.c_str());
+
 
     if (file != NULL)
     {
-        fputs(str.c_str(), file);
+        fputs(str1.c_str(), file);
         fflush(file);
         fclose(file);
+    }
+
+    if (file2 != NULL)
+    {
+        fputs(str2.c_str(), file2);
+        fflush(file2);
+        fclose(file2);
     }
 }
 

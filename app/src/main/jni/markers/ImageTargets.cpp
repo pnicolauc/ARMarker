@@ -121,6 +121,12 @@ std::vector<Vuforia::Vec3F> rotations;
 std::vector<Vuforia::Vec3F> translations;
 
 
+float prevtime=0.0;
+float currtime=0.0;
+int frames=0;
+
+
+
 // Object to receive update callbacks from Vuforia SDK
 class ImageTargets_UpdateCallback : public Vuforia::UpdateCallback
 {
@@ -187,6 +193,7 @@ jstring obj,jstring mtl,jstring xml,jstring folder,jfloat sca, jint markerNum,
  jobjectArray markerNames,jfloatArray markerRot,jfloatArray markerTra, jfloatArray markerSca,jboolean jmvo,jint mode)
 {
 
+//trackerParams.lastMarker=false;
     trackerParams.sensorRotation.data[3]=0;
     trackerParams.sensorRotation.data[7]=0;
     trackerParams.sensorRotation.data[11]=0;
@@ -398,6 +405,21 @@ jfloat y1,jfloat y2,jfloat y3,
 jfloat z1,jfloat z2,jfloat z3)
 {
     try{
+        frames++;
+        currtime = clock();
+
+        float difftime= abs(currtime - prevtime)/( CLOCKS_PER_SEC / 1000 );
+        LOG("time: %f",difftime);
+
+        if ((difftime) > 1000.0)
+        {
+        float fps=frames*1000.0/difftime;
+        prevtime = currtime;
+        frames=0;
+        LOG("Frames %d; FPS: %f",frames,fps);
+
+        }
+
         sensorData.scale = sc;
         SampleUtils::setMatrix(x1,x2,x3,y1,y2,y3,z1,z2,z3,sensorData.rotation);   
         SampleUtils::setRotation33to44(x1,x2,x3,y1,y2,y3,z1,z2,z3,trackerParams.sensorRotation.data);
@@ -531,13 +553,15 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                     istrNewMarker=strcmp(trackable.getName(), datasets.currMarker->name) != 0;      
                 else istrNewMarker=true;
 
-                if(hasMarker==false) istrNewMarker=true;
+                if(!hasMarker) istrNewMarker=true;
+
+                //if(hasMarker==false) istrNewMarker=true;
 
                 trackerParams.markerMatrix = trackerParams.modelViewMatrix;
 
                 hasMarker=true;
 
-                if (istrNewMarker) {                  
+                if (istrNewMarker) {        
                     LOG("New marker %s", trackable.getName());
                     datasets.currMarker = datasets.markers[trackable.getName()];
                     inverseModelView=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(trackerParams.markerMatrix));
@@ -548,6 +572,7 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                 }
             }
         }
+
         
         joinedmv=trackerParams.markerMatrix;        
 
@@ -562,40 +587,47 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         Vuforia::Matrix44F inverseSensor= SampleMath::Matrix44FTranspose(trackerParams.lastMat);
         SampleUtils::multiplyMatrix(trackerParams.sensorRotation.data, 
             inverseSensor.data,trackerParams.resMatrix.data);
-
-        currMVMatrix=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(currMVMatrix));
-        lastMVMatrix=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(lastMVMatrix));
-
-        currMVMatrix.data[12]=0;
-        currMVMatrix.data[13]=0;
-        currMVMatrix.data[14]=0;
-
-        lastMVMatrix.data[12]=0;
-        lastMVMatrix.data[13]=0;
-        lastMVMatrix.data[14]=0;
-
-        currMVMatrix=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(currMVMatrix));
-        lastMVMatrix=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(lastMVMatrix));
-
-        SampleUtils::multiplyMatrix(currMVMatrix.data, 
-        SampleMath::Matrix44FTranspose(lastMVMatrix).data,lastMVMatrix.data);
-
+        
         bool poseReliable=false;
     
         if(firstMarker){
-            if(hasMarker)
-                poseReliable = isPoseReliable(trackerParams.resMatrix,lastMVMatrix);
+            if(hasMarker){
+                if(!istrNewMarker){
+                    currMVMatrix=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(currMVMatrix));
+                    lastMVMatrix=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(lastMVMatrix));
+
+                    currMVMatrix.data[12]=0;
+                    currMVMatrix.data[13]=0;
+                    currMVMatrix.data[14]=0;
+
+                    lastMVMatrix.data[12]=0;
+                    lastMVMatrix.data[13]=0;
+                    lastMVMatrix.data[14]=0;
+
+                    currMVMatrix=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(currMVMatrix));
+                    lastMVMatrix=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(lastMVMatrix));
+
+                    SampleUtils::multiplyMatrix(currMVMatrix.data, 
+                    SampleMath::Matrix44FTranspose(lastMVMatrix).data,lastMVMatrix.data);
+
+                    poseReliable = isPoseReliable(trackerParams.resMatrix,lastMVMatrix);
+                }
+                else {
+                    lastMVMatrix=currMVMatrix;
+                    poseReliable=true;
+                }
             
             LOG("poseReliable: %d",poseReliable);
             bool addPreviousMatrix=false;
-            if(hasMarker && poseReliable) addPreviousMatrix=true;
-            if(!hasMarker) addPreviousMatrix=true;
+            if(poseReliable) addPreviousMatrix=true;
+            //if(!hasMarker) addPreviousMatrix=true;
             if(addPreviousMatrix){
-                cameraPos=Vuforia::Vec3F((inverseModelView.data[12]*0.6+cameraPos.data[0]*0.4),(inverseModelView.data[13]*0.6+cameraPos.data[1]*0.4), (inverseModelView.data[14]*0.6+cameraPos.data[2]*0.4));
-                cameraDir=Vuforia::Vec3F((inverseModelView.data[8]*0.6+cameraDir.data[0]*0.4), (inverseModelView.data[9]*0.6+cameraDir.data[1]*0.4),(inverseModelView.data[10]*0.6+cameraDir.data[2]*0.4));
-                cameraRight=Vuforia::Vec3F((inverseModelView.data[0]*0.6+cameraRight.data[0]*0.4),(inverseModelView.data[1]*0.6+cameraRight.data[1]*0.4),(inverseModelView.data[2]*0.6+cameraRight.data[2]*0.4));
-                cameraUp=Vuforia::Vec3F((inverseModelView.data[4]*0.6+cameraUp.data[0]*0.4),(inverseModelView.data[5]*0.6+cameraUp.data[1]*0.4),(inverseModelView.data[6]*0.6+cameraUp.data[2]*0.4));
+                cameraPos=Vuforia::Vec3F((inverseModelView.data[12]*0.4+cameraPos.data[0]*0.6),(inverseModelView.data[13]*0.4+cameraPos.data[1]*0.6), (inverseModelView.data[14]*0.4+cameraPos.data[2]*0.6));
+                cameraDir=Vuforia::Vec3F((inverseModelView.data[8]*0.4+cameraDir.data[0]*0.6), (inverseModelView.data[9]*0.4+cameraDir.data[1]*0.6),(inverseModelView.data[10]*0.4+cameraDir.data[2]*0.6));
+                cameraRight=Vuforia::Vec3F((inverseModelView.data[0]*0.4+cameraRight.data[0]*0.6),(inverseModelView.data[1]*0.4+cameraRight.data[1]*0.6),(inverseModelView.data[2]*0.4+cameraRight.data[2]*0.6));
+                cameraUp=Vuforia::Vec3F((inverseModelView.data[4]*0.4+cameraUp.data[0]*0.6),(inverseModelView.data[5]*0.4+cameraUp.data[1]*0.6),(inverseModelView.data[6]*0.4+cameraUp.data[2]*0.6));
           }
+        }
         }else if(!firstMarker && hasMarker){
             cameraPos=Vuforia::Vec3F(inverseModelView.data[12],inverseModelView.data[13],inverseModelView.data[14]);
             cameraDir=Vuforia::Vec3F(inverseModelView.data[8],inverseModelView.data[9],inverseModelView.data[10]);
@@ -610,13 +642,9 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         inverseModelView.data[13]=0;
         inverseModelView.data[14]=0;
 
+        //trackerParams.lastMarker=hasMarker;
 
         if(hasMarker){
-            trackerParams.lastMarker=hasMarker;
-            trackerParams.noTrackerAvailable=false;
-
-            
-            
             inverseModelView.data[0]=cameraRight.data[0];
             inverseModelView.data[1]=cameraRight.data[1];
             inverseModelView.data[2]=cameraRight.data[2];
@@ -637,7 +665,6 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             inverseModelView.data[13]=cameraPos.data[1];
             inverseModelView.data[14]=cameraPos.data[2];
 
-            translations.push_back(cameraPos);
             rotations.push_back(cameraDir);
 
             joinedmv=SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(inverseModelView));
@@ -662,7 +689,6 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
             trackerParams.lastMat=trackerParams.sensorRotation;
 
         }else{
-            if(trackerParams.lastMarker ){
                 inverseModelView.data[0]=cameraRight.data[0];
                 inverseModelView.data[1]=cameraRight.data[1];
                 inverseModelView.data[2]=cameraRight.data[2];
@@ -694,15 +720,19 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                     inverseSensor.data,trackerParams.resMatrix.data);
 
                 Vuforia::Matrix44F transFirstMV=firstMV;
+
+                transFirstMV.data[12]=0;
+                transFirstMV.data[13]=0;
+                transFirstMV.data[14]=0;
+                transFirstMV.data[15]=1;
                 SampleUtils::translatePoseMatrix(joinedmv.data[12],joinedmv.data[13],joinedmv.data[14],transFirstMV.data);
                 
                 
                 SampleUtils::multiplyMatrix(trackerParams.resMatrix.data,
                                             transFirstMV.data,
                                             &joinedmv.data[0]);
-                SampleUtils::printMatrix(joinedmv.data);
 
-            }
+            
         }
 
         SampleUtils::rotatePoseMatrix(
@@ -718,7 +748,6 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
                                         datasets.currMarker->translation[2],
                                             &joinedmv.data[0]);
 
-
         SampleUtils::multiplyMatrix(&projectionMatrix.data[0],
                                     &joinedmv.data[0] ,
                                     &modelViewProjection.data[0]);
@@ -729,6 +758,10 @@ void renderFrameForView(const Vuforia::State *state, Vuforia::Matrix44F& project
         firstMarker=true;
 
     }
+    Vuforia::Matrix44F transIn =SampleMath::Matrix44FTranspose(SampleMath::Matrix44FInverse(joinedmv));
+    translations.push_back(Vuforia::Vec3F(transIn.data[12],transIn.data[13],transIn.data[14]));
+                LOG("position: %f %f %f",transIn.data[12],transIn.data[13],transIn.data[14]);
+
     SampleUtils::checkGlError("ImageTargets renderFrame");
     glDisable(GL_DEPTH_TEST);  
 }
@@ -831,6 +864,11 @@ Java_com_mavoar_markers_ImageTargets_saveTrajectory(
     std::string str1;
     std::string str2;
 
+    str1.append("x,y,z");
+    str1.append("\n");
+
+    str2.append("x,y,z");
+    str2.append("\n");
     for(int i=0;i<vecSize;i++){
         std::stringstream ss;
         ss << translations[i].data[0] << "," << translations[i].data[1]  << "," << translations[i].data[2];
@@ -844,7 +882,6 @@ Java_com_mavoar_markers_ImageTargets_saveTrajectory(
         str2.append("\n");
     }
 
-        LOG("Java_com_mavoar_markers_ImageTargets_saveTrajectory %s points",str1.c_str());
 
 
     if (file != NULL)

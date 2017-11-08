@@ -160,7 +160,7 @@ void SampleAppRenderer::renderFrame()
         Vuforia::Matrix44F rawProjectionMatrixGL = Vuforia::Tool::convertPerspectiveProjection2GLMatrix(
                                                                                                         projMatrix,
                                                                                                         0.05,
-                                                                                                        100);
+                                                                                                        1000);
 
         // Apply the appropriate eye adjustment to the raw projection matrix, and assign to the global variable
         Vuforia::Matrix44F eyeAdjustmentGL = Vuforia::Tool::convert2GLMatrix(renderingPrimitives->getEyeDisplayAdjustmentMatrix(vw));
